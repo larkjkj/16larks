@@ -55,11 +55,7 @@ extern inline void mainFunc() {
 			printf("ERROR! Address exceed usable memory! \n");
 			break;
 		}
-		#ifdef NOROM
-			exec_instruction();
-		#else
-			printf("This will cause problems due to cpu doesn' knowing that to do! \n");
-		#endif
+		exec_instruction();
 	}
 }
 
