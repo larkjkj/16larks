@@ -1,13 +1,15 @@
 ps2	?= 0
 binary	:= larkfx
 
+debug	?= 0
 paths	:= src
 source	:= $(foreach path,$(paths),$(wildcard $(path)/*.c))
 objects	:= $(patsubst %.c,%.o,$(source))
 incs	:= -Iinclude 
-flags	:= -lc
+flags	:= -lc 
 
 ifeq ($(ps2),1)
+	objects		:= $(patsubst %.c,%-ps2.o,$(source))
 	binary		:= larkfx-ps2.elf
 	prefix		:= mips64r5900el-ps2-elf-
 	linkfile	:= -L$(PS2SDK)/ee/startup/linkfile
@@ -23,7 +25,7 @@ endif
 linker		:= $(prefix)ld
 compiler	:= $(prefix)gcc
 
-all: $(binary)
+all: clean $(binary)
 
 clean:
 	rm -rf $(binary) $(objects)
@@ -31,6 +33,8 @@ clean:
 $(binary): $(objects)
 	$(compiler) $? -o $@
 
+%-ps2.o: %.c
+	$(compiler) $(flags) $(incs) -c $< -o $@
 
 %.o: %.c
-	$(compiler) $(incs) -c $< -o $@
+	$(compiler) $(flags) $(incs) -c $< -o $@
