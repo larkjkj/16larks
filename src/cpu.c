@@ -8,55 +8,59 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-
-bool cpu_waiting;
-
-static int init_cpu() {
-	// i want this script to simply alloc memory for the cpu
-	// u16* sucess = malloc(*total_memory)
-	// if (sucess != null) {
-	//   printf("succesfully allocated \n");
-	// } else {
-	//   printf("failed to allocate main mem \n");
-	// }
-	// return 1;
-	cpu_waiting = 1;
-	printf("We did nothing lmao \n");
-	return 0;
-}
+int cpu_waiting = 1;
 
 static inline int exec_instruction() {
+	fake_rom[++pc];
+	//kinda hack but works;
+	#ifdef NOROM
+		instruction = fake_rom[pc];
+	#endif
+
 	switch (instruction) {
-		case ADD:
+		case _add:
 			add();
 		break;
-		case MOV:
+		case _mov:
 			mov();
 		break;
-		case PRN:
+		case _prn:
 			prn();
 		break;
+		case _eoq:
+			cpu_waiting = 0;
+			exit(1);
+		break;
 
+		case _err:
+			printf("Code is ignoring next value as argument \n");
+		break;
 		default:
-			printf("Unknown instruction \n");
+			printf("Unknown instruction: %x \n", instruction);
+			return 0;
 		break;
 	}
 	return 0;
 }
 
-extern inline void mainFunc() {
+extern inline int mainFunc() {
 	cpu_waiting = 1;
-	while (cpu_waiting) {
-		printf("Waiting for instruction... \n");
-		printf("Enter the instruction: ");
-		scanf("%hu", &instruction);
-		
+	while (cpu_waiting) {	
+		#ifndef NOROM		
+			printf("Waiting for instruction...");
+			printf("Enter the instruction: ");
+			scanf("%hx", &instruction);
+		#endif
+		printf("%x \n", fake_rom[pc]);
+
 		if (address >= (sizeof(total_memory) / sizeof(total_memory[0]))) {
 			printf("ERROR! Address exceed usable memory! \n");
 			break;
 		}
 		exec_instruction();
+		break;
 	}
+	return 0;
 }
 
 static inline void printMemory() {
