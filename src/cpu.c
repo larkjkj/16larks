@@ -8,15 +8,14 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
+
 int cpu_waiting = 1;
 
 static inline int exec_instruction() {
-	fake_rom[++pc];
 	//kinda hack but works;
-	#ifdef NOROM
-		instruction = fake_rom[pc];
-	#endif
-
+	if (address >= (sizeof(total_memory) / sizeof(total_memory[0]))) {
+			printf("ERROR! Address exceed usable memory! \n");
+		}
 	switch (instruction) {
 		case _add:
 			add();
@@ -32,40 +31,34 @@ static inline int exec_instruction() {
 			exit(1);
 		break;
 
-		case _err:
-			printf("Code is ignoring next value as argument \n");
-		break;
 		default:
-			printf("Unknown instruction: %x \n", instruction);
+			printf("Unknown instruction: %x %x \n", fake_rom[pc], instruction);
 			return 0;
 		break;
 	}
 	return 0;
 }
 
-extern inline int mainFunc() {
+extern int mainFunc() {
 	cpu_waiting = 1;
-	while (cpu_waiting) {	
-		#ifndef NOROM		
+	while (cpu_waiting) {
+		//printMemory();
+		#ifdef DEBUG		
 			printf("Waiting for instruction...");
 			printf("Enter the instruction: ");
 			scanf("%hx", &instruction);
+		#else
+			printf("Current instruction %x \n", fake_rom[pc]); // this will just print the counter
+			instruction = fake_rom[pc++];
+			exec_instruction();
 		#endif
-		printf("%x \n", fake_rom[pc]);
-
-		if (address >= (sizeof(total_memory) / sizeof(total_memory[0]))) {
-			printf("ERROR! Address exceed usable memory! \n");
-			break;
-		}
-		exec_instruction();
-		break;
+		//break;
 	}
 	return 0;
 }
 
 static inline void printMemory() {
-	for(u16 i = 0; i < (sizeof(total_memory) / sizeof(total_memory[0])); i ++) {
+	for(int i = 0; i < (sizeof(total_memory) / sizeof(total_memory[0])); i ++) {
 		printf("Address number: %04x \n", total_memory[i]);
-		sleep(1);
 	}
 }

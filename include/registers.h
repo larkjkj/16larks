@@ -8,13 +8,10 @@ extern void setupCPUInstructions();
 // pb is the same pbr
 // x and y are of the same type
 
-typedef enum {
+extern u16 pc;
 	//a;
 	//x, y;
 	//s;
 	//dbr / db;
 	//d / dp;
 	//pb / pbr;
-	//p;
-	pc* = &instruction;
-} cpu_registers;

@@ -7,8 +7,6 @@ enum emulator_instructions {
 	_mov = 0xfb,
 	_prn = 0xfc,
 	_eoq = 0xfd,
-
-	_err = 0x10, // this is just a test, this addres doesnt really exist
 };
 
 enum cpu_instructions {
