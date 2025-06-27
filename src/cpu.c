@@ -1,7 +1,8 @@
 #include "defs.h"
 
 #include "instructions.h"
-#include "cpu_instructions.h"
+#include "cpu_opcodes.h"
+#include "arguments.h"
 #include "memory.h"
 
 #include <stdio.h>
@@ -9,7 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 
-int cpu_waiting = 1;
+static int cpu_waiting;
 
 static inline int exec_instruction() {
 	//kinda hack but works;
@@ -32,7 +33,7 @@ static inline int exec_instruction() {
 		break;
 
 		default:
-			printf("Unknown instruction: %x %x \n", fake_rom[pc], instruction);
+			printf("Unknown instruction: %x %x \n", rom[pc], instruction);
 			return 0;
 		break;
 	}
@@ -48,9 +49,10 @@ extern int mainFunc() {
 			printf("Enter the instruction: ");
 			scanf("%hx", &instruction);
 		#else
-			printf("Current instruction %x \n", fake_rom[pc]); // this will just print the counter
-			instruction = fake_rom[pc++];
+			printf("Current instruction %x \n", rom[pc]); // this will just print the counter
+			instruction = rom[pc++];
 			exec_instruction();
+			usleep(10000);
 		#endif
 		//break;
 	}

@@ -18,3 +18,9 @@ enum cpu_instructions {
 	_jmp = 0x4c,
 	_jsr = 0x20,
 };
+
+extern u16 destination;
+extern u16 instruction;
+extern u16 pc;
+
+

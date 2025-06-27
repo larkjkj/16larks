@@ -1,1 +1,2 @@
- extern int verbose;
+extern int norom;
+extern int verbose;
