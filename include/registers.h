@@ -8,7 +8,7 @@ extern void setupCPUInstructions();
 // pb is the same pbr
 // x and y are of the same type
 
-extern u16 pc;
+//extern u16 pc;
 	//a;
 	//x, y;
 	//s;
