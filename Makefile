@@ -6,7 +6,7 @@ paths	:= src
 source	:= $(foreach path,$(paths),$(wildcard $(path)/*.c))
 objects	:= $(patsubst %.c,%.o,$(source))
 incs	:= -Iinclude 
-flags	:= -Wall -lc -lSDL2main -lSDL2 -lSDL2_ttf 
+flags	:= -Wno-unused-variable -lc -lSDL2main -lSDL2 -lSDL2_ttf 
 
 ifeq ($(debug), 1)
 	flags += -DDEBUG
