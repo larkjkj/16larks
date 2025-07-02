@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
 		}
 		if (strcmp(argv[i], "--norom") == 0) {
 			norom = 1;
+			u16 rom[sizeof(fake_rom)];
 			memcpy(rom, fake_rom, sizeof(fake_rom));
 		} else if (strcmp(argv[i], "--rom=") == 0) {
 			tmp_rom = argv[i+6];
