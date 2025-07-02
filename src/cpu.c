@@ -2,22 +2,38 @@
 
 #include "instructions.h"
 #include "cpu_opcodes.h"
+#include "cpu.h"
+#include "init_funcs.h"
+
 #include "arguments.h"
 #include "memory.h"
+#include "rom.h"
 
 #include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 
-static int cpu_waiting;
+u16 total_memory[65536];
+u16 pc = 0;
+u16 instruction = 0;
+u16 address = 0;
+u16 destination = 0;
+int cpu_waiting = 0;
+
+//satic int cpu_waiting;
+int cycle = 0;
 
 static inline int exec_instruction() {
-	//kinda hack but works;
+	//kinda hack but works;	
 	if (address >= (sizeof(total_memory) / sizeof(total_memory[0]))) {
-			printf("ERROR! Address exceed usable memory! \n");
-		}
+		printf("ERROR! Address exceed usable memory! \n");
+	}
+	if (rom[pc] >= (sizeof(total_memory))) {
+		pc = 0;
+	}
 	switch (instruction) {
+		//emulator ones
 		case _add:
 			add();
 		break;
@@ -30,6 +46,14 @@ static inline int exec_instruction() {
 		case _eoq:
 			cpu_waiting = 0;
 			exit(1);
+		break;
+		case _ato:
+			ato();
+		break;
+
+		// actual snes
+		case _jmp:
+			jmp();
 		break;
 
 		default:
@@ -52,7 +76,9 @@ extern int mainFunc() {
 			printf("Current instruction %x \n", rom[pc]); // this will just print the counter
 			instruction = rom[pc++];
 			exec_instruction();
-			usleep(10000);
+			eventLoop();
+			// this adda momentum for the instruction for exec (simulate cycles)
+			usleep(cycle);
 		#endif
 		//break;
 	}

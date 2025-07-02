@@ -7,6 +7,7 @@ enum emulator_instructions {
 	_mov = 0xfb,
 	_prn = 0xfc,
 	_eoq = 0xfd,
+	_ato = 0xfe,
 };
 
 enum cpu_instructions {
@@ -18,9 +19,3 @@ enum cpu_instructions {
 	_jmp = 0x4c,
 	_jsr = 0x20,
 };
-
-extern u16 destination;
-extern u16 instruction;
-extern u16 pc;
-
-

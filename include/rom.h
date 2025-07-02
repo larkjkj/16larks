@@ -1,10 +1,15 @@
+#ifndef ROM_HEADER
+#define ROM_HEADER
+
 #include "defs.h"
 #include "instructions.h"
 
-extern u16 fake_rom[];
 extern u16 rom[];
+extern u16 rom_size;
+//extern u16 fake_rom[];
+//split shit
 
-u16 fake_rom[] = {
+static u16 fake_rom[] = {
 	_mov, 0x0012, 0x00FF, _mov, 0x00A0, 0x0042,
 	_mov, 0x00C1, 0x0F0F, _mov, 0x0030, 0x1234,
 	_mov, 0x0100, 0xAAAA, _add, 0x0012, _add,
@@ -23,7 +28,28 @@ u16 fake_rom[] = {
 	0x9999, _add, 0x0001, _add, 0x0001, _prn,
 	0x0000, 0x0003, _mov, 0x0030, 0xFFFF, _add,
 	0x0030, _add, 0x0030, _prn, 0x0030, 0x0031,
+	
+	// this is hello world
+	// 0x0048, 0x0065, 0x006C, 0x006C, 0x006F,
+	// 0x0020, 0x0057, 0x006F, 0x0072, 0x006C,
+	// 0x0064, 
+
+	// then we add they to the "memory"
+	_mov, 0x1000, 0x0048, _mov, 0x1001, 0x006C,
+	_mov, 0x1002, 0x006C, _mov, 0x1003, 0x006F,
+	_mov, 0x1004, 0x0020, _mov, 0x1005, 0x0057,
+	_mov, 0x1006, 0x006F, _mov, 0x1007, 0x0072,
+	_mov, 0x1008, 0x006C, _mov, 0x1009, 0x0064,
+	
+	// then we print using a emulator opcode
+	_ato, 0x1000, 0x1009,
+
+	// infinite loop
+	_jmp, 0xfa,
+
 	_eoq
 };
+// lo rom
 
-u16 rom[] = {};
+// hi rom my as
+#endif

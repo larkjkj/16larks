@@ -1,2 +1,2 @@
-extern void splitRom(const char* rom);
-extern void identifyRom();
+extern  void splitRom(const char* rom);
+extern  void identifyRom();

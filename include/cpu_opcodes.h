@@ -3,6 +3,9 @@
 
 #include "defs.h"
 
-extern int add();
-extern int mov();
-extern int prn();
+extern void add();
+extern void mov();
+extern void prn();
+extern void jmp();
+extern void ato();
+
