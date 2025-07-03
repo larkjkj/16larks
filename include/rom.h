@@ -4,8 +4,10 @@
 #include "defs.h"
 #include "instructions.h"
 
-extern u16 rom[];
-extern u16 rom_size;
+extern u16* rom;
+extern size_t rom_size;
+extern char* rom_name;
+
 //extern u16 fake_rom[];
 //split shit
 
@@ -45,7 +47,8 @@ static u16 fake_rom[] = {
 	_ato, 0x1000, 0x1009,
 
 	// infinite loop
-	_jmp, 0xfa,
+	_jmp, _prn,
+	_jmp, 0xfffa,
 
 	_eoq
 };

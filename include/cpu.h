@@ -8,6 +8,7 @@
 extern int cpu_waiting;
 extern u16 address;
 extern u16 total_memory[65536];
+extern char tot_mem_buffer[200];
 extern u16 destination;
 extern u16 instruction;
 

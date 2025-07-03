@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "arguments.h"
 #include "rom.h"
 #include "cpu.h"
 #include "instructions.h"
@@ -27,6 +28,7 @@ char pc_buffer[20];
 char add_buffer[20];
 char ins_buffer[20];
 char mem_buffer[20];
+char rom_buffer[256];
 
 //int w, h;
 TTF_Font * pixelated;
@@ -41,25 +43,23 @@ SDL_Color white = {
 	255,
 };
 
-int p_w, p_h, a_w, a_h, i_w, i_h, m_w, m_h;
+int p_w, p_h, a_w, a_h, i_w, i_h, m_w, m_h, r_w, r_h, t_w, t_h;
 
 /*SDL_Surface* pc_surface;
 SDL_Surface* add_surface;
 SDL_Surface* ins_surface;
 */
-SDL_Texture* pc_texture = NULL;
-SDL_Texture* add_texture = NULL;
-SDL_Texture* ins_texture = NULL;
 
 extern void debug_memory() {
 	snprintf(add_buffer, sizeof(add_buffer), "ADDRESS: %04X", address);
 	snprintf(ins_buffer, sizeof(ins_buffer), "INSTRUCTION: %X", rom[pc]);
-	snprintf(pc_buffer, sizeof(pc_buffer), "PC: %u", pc);
+	snprintf(pc_buffer, sizeof(pc_buffer), "PC: %i", pc);
+	snprintf(rom_buffer, sizeof(rom_buffer), "ROM: %s", rom_name);
 
 	for(int i = 0; i < ((sizeof(total_memory)) / (sizeof(total_memory[0]))); i++) {
-		snprintf(mem_buffer, sizeof(total_memory[i]), "%04X", total_memory[i]);
+		snprintf(mem_buffer, sizeof(mem_buffer), "%04X", total_memory[i]);
 	}
-
+	
 
 	/*add_surface = TTF_RenderText_Solid(pixelated, add_buffer, white);
 	ins_surface = TTF_RenderText_Solid(pixelated, ins_buffer, white);
@@ -73,11 +73,15 @@ extern void debug_memory() {
 	SDL_Texture * ins_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, ins_buffer, white));
 	SDL_Texture * pc_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, pc_buffer, white));
 	SDL_Texture * mem_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, mem_buffer, white));
+	SDL_Texture * rom_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, rom_buffer, white));
+	SDL_Texture * tot_mem_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, tot_mem_buffer, white));
 
 	SDL_QueryTexture(pc_texture, NULL, NULL, &p_w, &p_h);
 	SDL_QueryTexture(add_texture, NULL, NULL, &a_w, &a_h);
 	SDL_QueryTexture(ins_texture, NULL, NULL, &i_w, &i_h);
 	SDL_QueryTexture(mem_texture, NULL, NULL, &m_w, &m_h);
+	SDL_QueryTexture(rom_texture, NULL, NULL, &r_w, &r_h);
+	SDL_QueryTexture(tot_mem_texture, NULL, NULL, &t_w, &t_h);
 
 
 	SDL_Rect pc_rect = {
@@ -96,11 +100,21 @@ extern void debug_memory() {
 		0, 	64,	//size of my ass
 		m_w,	m_h,	//size of my penis 
 	};
+	SDL_Rect rom_rect = {
+		0, 	SCREEN_HEIGHT - 32,	//size of my ass
+		r_w,	r_h,	//size of my penis 
+	};
+	SDL_Rect tot_mem_rect = {
+		0, 	SCREEN_HEIGHT - 32,	//size of my ass
+		t_w,	t_h,	//size of my penis 
+	};
 
 	SDL_RenderCopy(renderer, add_texture, NULL, &add_rect);
 	SDL_RenderCopy(renderer, ins_texture, NULL, &ins_rect);
 	SDL_RenderCopy(renderer, pc_texture, NULL, &pc_rect);
 	SDL_RenderCopy(renderer, mem_texture, NULL, &mem_rect);
+	SDL_RenderCopy(renderer, rom_texture, NULL, &rom_rect);
+	SDL_RenderCopy(renderer, tot_mem_texture, NULL, &tot_mem_rect);
 
 /*	SDL_FreeSurface(add_surface);
 	SDL_FreeSurface(ins_surface);
@@ -110,6 +124,8 @@ extern void debug_memory() {
 	SDL_DestroyTexture(ins_texture);
 	SDL_DestroyTexture(pc_texture);
 	SDL_DestroyTexture(mem_texture);
+	SDL_DestroyTexture(rom_texture);
+	SDL_DestroyTexture(tot_mem_texture);
 };
 
 extern void initGraphics() {
@@ -118,7 +134,7 @@ extern void initGraphics() {
 		return;
 	}
 	TTF_Init();
-	pixelated = TTF_OpenFont("fonts/retro.ttf", 13);	
+	pixelated = TTF_OpenFont("fonts/retro.ttf", 15);	
 	window = SDL_CreateWindow("penis", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
 	renderer = SDL_CreateRenderer(window, -1, 0);
 	if (pixelated == NULL) {
@@ -128,7 +144,7 @@ extern void initGraphics() {
 
 extern void eventLoop() {
 	SDL_RenderClear(renderer);
-	debug_memory();
+	//debug_memory();
 	SDL_RenderPresent(renderer);
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -142,4 +158,5 @@ extern void eventLoop() {
 			SDL_Quit();
 		}	
 	}
+	//SDL_Delay(16);
 }

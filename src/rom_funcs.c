@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "arguments.h"
 #include "rom.h"
+
+size_t rom_size = 0;
 
 extern inline void identifyRom() {
 	if (norom) {
@@ -11,11 +14,30 @@ extern inline void identifyRom() {
 	}
 }
 
-extern inline void splitRom(const char* rom) {
-	FILE* rom_file;
-	rom_file = fopen(rom, "r");
+extern inline void splitRom(char* name) {
+	FILE* rom_file = fopen(name, "rb");
+	if (fseek(rom_file, 0, SEEK_END) == 0) {
+		size_t rom_size = ftell(rom_file);
+		rewind(rom_file);
+
+		if (rom_size == 0) {
+			printf("ROM size is 0? Rom buffer will not be specified correctly \n");
+		} else {
+			printf("ROM size: %i \n", rom_size);
+		}
+	} else {
+		printf("Error moving pointer to beggining \n");
+	}
 	
-	fseek(rom_file, 0, SEEK_END);
+	u16* rom = (malloc(rom_size));
+	printf("ROM array %i \n", rom);
+		if (fread(rom, sizeof(u8), (sizeof(rom_size)), rom_file)) {
+		printf("Sucess reading the rom \n");
+		printf("ROM SIZE: %i", sizeof(rom_file));
+	} else {
+		printf("Fail opening the rom file, wrong name? \n");
+		memcpy(rom, fake_rom, sizeof(fake_rom));
+	}
 
 	// identify betw lo and hi
 	//
@@ -27,5 +49,6 @@ extern inline void splitRom(const char* rom) {
 	if (rom_file == NULL) {
 		printf("Error: rom file is corrupted or non-existent \n");
 	}
+	fclose(rom_file);
 	return;
 }

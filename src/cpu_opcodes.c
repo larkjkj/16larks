@@ -8,7 +8,7 @@
 #include "instructions.h"
 #include "arguments.h"
 
-#ifdef DEBUG
+#ifdef INTERACTIVE 
 
 inline void add() {
 	printf("Enter the address to increment:");	
@@ -74,14 +74,18 @@ inline void prn() {
 }
 
 inline void jmp() {
+	address = rom[++pc];
 	// probally more advanced than that
-//	pc = address[rom];
+	//typeof(address) t_address = n;
+	//pc = rom[address];
 	//
 	//	yea if course this shit is;
 	//if (address[rom] == cpu_instructions)
 	//	pc = (int)cpu_instructions;
 	//else
-	pc = total_memory[++pc];
+	rom[pc] = address;
+
+	printf("%i \n", rom[pc]);
 	//address = rom[pc++];
 }
 
