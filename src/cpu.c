@@ -175,10 +175,11 @@ extern int mainFunc() {
 		scanf("%hx", &instruction);
 		#else
 		
-		printf("Current instruction %x \n", rom[pc]); // this will just print the counter
-		//instruction = rom[++pc];
+		if (verbose) {
+			printf("Current instruction %x \n", rom[pc]); // this will just print the counter
+		}
 
-		instruction = rom[pc];
+		instruction = rom[++pc];
 		execInstruction();
 		eventLoop();
 		// this adda momentum for the instruction for exec (simulate cycles)
@@ -189,5 +190,3 @@ extern int mainFunc() {
 	}
 	return 0;
 }
-
-

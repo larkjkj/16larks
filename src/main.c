@@ -17,7 +17,6 @@ u16* rom = NULL;
 
 int main(int argc, char* argv[]) {
 	initGraphics();
-	u16* rom = malloc(sizeof(u16));
 	for(int i = 0; i < argc; i += 1) {
 		if (strcmp(argv[i], "--verbose") == 0) {
 			verbose = 1;
@@ -36,6 +35,8 @@ int main(int argc, char* argv[]) {
 			splitRom(rom_name);
 		} else {
 			printf("Running CPU with no instructions \n");
+			u16* rom = malloc(sizeof(u16));
+
 		}
 	}
 	//printf("%i", sizeof(rom));
@@ -48,6 +49,8 @@ int main(int argc, char* argv[]) {
 		printMemory();
 		if (mainFunc() > 0) {
 			printf("Return code is not 0, something is wrong \n");
+		} else {
+			printf("Something gone wrong, probally mem error \n");
 		}
 
 		//eventLoop();

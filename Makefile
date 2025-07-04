@@ -4,7 +4,7 @@ binary	:= larkfx
 debug	?= 0
 paths	:= src
 source	:= $(foreach path,$(paths),$(wildcard $(path)/*.c))
-objects	:= $(patsubst %.c,%.o,$(source))
+objects	:= $(patsubst %.c,build/%.o,$(source))
 incs	:= -Iinclude 
 flags	:= -lc -lSDL2main -lSDL2 -lSDL2_ttf 
 
@@ -13,7 +13,7 @@ ifeq ($(debug), 1)
 endif
 
 ifeq ($(ps2),1)
-	objects		:= $(patsubst %.c,%-ps2.o,$(source))
+	objects		:= $(patsubst %.c,build/%-ps2.o,$(source))
 	binary		:= larkfx-ps2.elf
 	prefix		:= mips64r5900el-ps2-elf-
 	linkfile	:= -L$(PS2SDK)/ee/startup/linkfile
@@ -41,8 +41,10 @@ clean:
 $(binary): $(objects)
 	$(compiler) $(flags) $(incs) $? -o $@
 
-%-ps2.o: %.c
+build/%-ps2.o: %.c
+	@test -d || mkdir -p $(@D) || continue;
 	$(compiler) $(flags) $(incs) -c $< -o $@
 
-%.o: %.c
+build/%.o: %.c
+	@test -d || mkdir -p $(@D) || continue;
 	$(compiler) $(flags) $(incs) -c $< -o $@
