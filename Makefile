@@ -42,9 +42,9 @@ $(binary): $(objects)
 	$(compiler) $(flags) $(incs) $? -o $@
 
 build/%-ps2.o: %.c
-	@test -d || mkdir -p $(@D) || continue;
+	test -d || mkdir -p $(@D) || continue
 	$(compiler) $(flags) $(incs) -c $< -o $@
 
 build/%.o: %.c
-	@test -d || mkdir -p $(@D) || continue;
+	test -d $(@D) || mkdir -p $(@D) || continue;
 	$(compiler) $(flags) $(incs) -c $< -o $@
