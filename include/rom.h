@@ -4,6 +4,9 @@
 #include "defs.h"
 #include "instructions.h"
 
+extern void splitRom(char* rom);
+extern void identifyRom();
+
 extern u16* rom;
 extern size_t rom_size;
 extern char* rom_name;
@@ -48,7 +51,7 @@ static u16 fake_rom[] = {
 
 	// infinite loop
 	_jmp, _prn,
-	_jmp, 0xfffa,
+	// _jmp, 0xfffa,
 
 	_eoq
 };
