@@ -21,11 +21,11 @@
 
 // gpt gave a good reason to think lmao
 enum emulator_instructions {
-	_add = 0xffff, // add exatcle ONE value to memory
-	_mov = 0xfffb, // move/copy an address to another
-	_prn = 0xfffc, // print one address to another
-	_eoq = 0xfffd, // end or quit
-	_ato = 0xfffe, // suppose to print the corresponding char of a hexadecimal
+	_add = 0xFFFF, // add exatcle ONE value to memory
+	_mov = 0xFFFB, // move/copy an address to another
+	_prn = 0xFFFC, // print one address to another
+	_eoq = 0xFFFD, // end or quit
+	_ato = 0xFFFE, // suppose to print the corresponding char of a hexadecimal
 };
 
 enum cpu_instructions {
@@ -131,7 +131,11 @@ enum cpu_instructions {
 	_eor		= 0x00,
 
 	// INC INS
-	_inc		= 0xEE, //basically a add equivalent
+	_inc_a		= 0x1A, //basically a add equivalent
+	_inc_dp		= 0xE6, //basically a add equivalent
+	_inc_addr	= 0xEE, //basically a add equivalent
+	_inc_dp_x	= 0xF6, //basically a add equivalent
+	_inc_addr_x	= 0xFE, //basically a add equivalent
 	_inx		= 0xE8, //basically a add(x) equivalent
 	_iny		= 0xC8, //basically a add(y) equivalent
 	
@@ -181,16 +185,16 @@ enum cpu_instructions {
 	_ply		= 0x00,
 
 
-	_sta 		= 0x8d,
+	_sta_addr 	= 0x8d,
 	_sbc 		= 0xe1,
-	_stx		= 0x00,
-	_sty		= 0x00,
+	_stx_addr	= 0x8E,
+	_sty_addr	= 0x8C,
 	_stp		= 0x00,
 	_stz		= 0x00,
 
 	_tax		= 0xAA,
 	_tay		= 0xAB,
-	_tcd		= 0x5C,
+	_tcd		= 0x5B,
 	_tcs		= 0x1B,
 	_tdc		= 0x7B,
 	_tsc		= 0x3B,

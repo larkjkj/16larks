@@ -15,7 +15,7 @@
 #include "SDL_ttf.h"
 #include "SDL_rect.h"
 
-#ifdef D_PS2
+#ifdef _PS2
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480 //implement wider
 #else
@@ -24,17 +24,40 @@
 #endif
 
 int w, h;
-char pc_buffer[20];
-char add_buffer[20];
-char ins_buffer[20];
-char mem_buffer[20];
-char rom_buffer[256];
+
+static char pc_buffer[50];
+static char old_pc_buffer[sizeof(pc_buffer)];
+
+static char ins_buffer[50];
+static char old_ins_buffer[sizeof(ins_buffer)];
+
+static char rom_buffer[256];
+static char old_rom_buffer[sizeof(rom_buffer)];
+
+static char gen_buffer[50];
+static char old_gen_buffer[sizeof(gen_buffer)];
+
+static char type_buffer[256];
+static char old_type_buffer[sizeof(type_buffer)];
+
+static char type2_buffer[300];
+static char old_type2_buffer[sizeof(type2_buffer)];
 
 //int w, h;
 TTF_Font * pixelated;
+
 SDL_Window* window;
 SDL_Event event;
 SDL_Renderer* renderer;
+
+SDL_Texture * ins_texture = NULL;
+SDL_Texture * pc_texture = NULL;
+SDL_Texture * rom_texture = NULL;
+SDL_Texture * gen_texture = NULL;
+SDL_Texture * tot_mem_texture = NULL;
+SDL_Texture * mem_texture = NULL;
+SDL_Texture * type_texture = NULL;
+SDL_Texture * type2_texture = NULL;
 
 SDL_Color white = {
 	255,
@@ -43,47 +66,82 @@ SDL_Color white = {
 	255,
 };
 
-int p_w, p_h, a_w, a_h, i_w, i_h, m_w, m_h, r_w, r_h, t_w, t_h;
-
-/*SDL_Surface* pc_surface;
-SDL_Surface* add_surface;
-SDL_Surface* ins_surface;
-*/
+int t2_w, t2_h, g_w, g_h, p_w, p_h, a_w, a_h, i_w, i_h, m_w, m_h, r_w, r_h, t_w, t_h;
 
 extern void debug_memory() {
-	snprintf(add_buffer, sizeof(add_buffer), "ADDRESS: %04X", address);
-	snprintf(ins_buffer, sizeof(ins_buffer), "INSTRUCTION: %X", rom[pc]);
 	snprintf(pc_buffer, sizeof(pc_buffer), "PC: %i", pc);
+	snprintf(ins_buffer, sizeof(ins_buffer), "INS: %X", instruction);
 	snprintf(rom_buffer, sizeof(rom_buffer), "ROM: %s", rom_name);
-
-	for(int i = 0; i < ((sizeof(total_memory)) / (sizeof(total_memory[0]))); i++) {
-		snprintf(mem_buffer, sizeof(mem_buffer), "%04X", total_memory[i]);
+	snprintf(gen_buffer, sizeof(gen_buffer), "A: %i \n X: %i \n Y: %i \n DP: %i \n", a, x, y, dp);
+	snprintf(type_buffer, sizeof(type_buffer), "ROM_TYPE: %s", rom_type);
+	snprintf(type2_buffer, sizeof(type2_buffer), "Z_FLAG: %i \n C_FLAG: %i \n X_FLAG: %i \n N_FLAG: %i \n D_FLAG: %i \n", z_flag, c_flag, x_flag, n_flag, d_flag);
+	if (strcmp(pc_buffer, old_pc_buffer) != 0) {
+		strcpy(old_pc_buffer, pc_buffer);
+		if (pc_texture) {
+			SDL_DestroyTexture(pc_texture);
+		}
+		SDL_Surface * pc_surface = TTF_RenderText_Solid(pixelated, pc_buffer, white);
+		pc_texture = SDL_CreateTextureFromSurface(renderer, pc_surface);
+		SDL_FreeSurface(pc_surface);
 	}
-	
-
-	/*add_surface = TTF_RenderText_Solid(pixelated, add_buffer, white);
-	ins_surface = TTF_RenderText_Solid(pixelated, ins_buffer, white);
-	pc_surface = TTF_RenderText_Solid(pixelated, pc_buffer, white);
-	
-	add_texture = SDL_CreateTextureFromSurface(renderer, add_surface);
-	ins_texture = SDL_CreateTextureFromSurface(renderer, ins_surface);
-	pc_texture = SDL_CreateTextureFromSurface(renderer, pc_surface);*/
-
-	SDL_Texture * add_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, add_buffer, white));
-	SDL_Texture * ins_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, ins_buffer, white));
-	SDL_Texture * pc_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, pc_buffer, white));
-	SDL_Texture * mem_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, mem_buffer, white));
-	SDL_Texture * rom_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, rom_buffer, white));
-	SDL_Texture * tot_mem_texture = SDL_CreateTextureFromSurface(renderer, TTF_RenderText_Solid(pixelated, tot_mem_buffer, white));
-
+	if (strcmp(ins_buffer, old_ins_buffer) != 0) {
+		strcpy(old_ins_buffer, ins_buffer);
+		if (ins_texture) {
+			SDL_DestroyTexture(ins_texture);
+		}
+		SDL_Surface * ins_surface = TTF_RenderText_Solid(pixelated, ins_buffer, white);
+		ins_texture = SDL_CreateTextureFromSurface(renderer, ins_surface);
+		SDL_FreeSurface(ins_surface);
+	}
+	if (strcmp(rom_buffer, old_rom_buffer) != 0) {
+		strcpy(old_rom_buffer, rom_buffer);
+		if (rom_texture) {
+			SDL_DestroyTexture(rom_texture);
+		}
+		SDL_Surface * rom_surface = TTF_RenderText_Solid(pixelated, rom_buffer, white);
+		rom_texture = SDL_CreateTextureFromSurface(renderer, rom_surface);
+		SDL_FreeSurface(rom_surface);
+	}
+	if (strcmp(gen_buffer, old_gen_buffer) != 0) {
+		strcpy(old_gen_buffer, gen_buffer);
+		if (gen_texture) {
+			SDL_DestroyTexture(gen_texture);
+		}
+		SDL_Surface * gen_surface = TTF_RenderText_Solid(pixelated, gen_buffer, white);
+		gen_texture = SDL_CreateTextureFromSurface(renderer, gen_surface);
+		SDL_FreeSurface(gen_surface);
+	}
+	if (strcmp(type2_buffer, old_type2_buffer) != 0) {
+		strcpy(old_type2_buffer, type2_buffer);
+		if (type2_texture) {
+			SDL_DestroyTexture(type2_texture);
+		}
+		SDL_Surface * type2_surface = TTF_RenderText_Solid(pixelated, type2_buffer, white);
+		type2_texture = SDL_CreateTextureFromSurface(renderer, type2_surface);
+		SDL_FreeSurface(type2_surface);
+	}
+	if (strcmp(type_buffer, old_type_buffer) != 0) {
+		strcpy(old_type_buffer, type_buffer);
+		if (type_texture) {
+			SDL_DestroyTexture(type_texture);
+		}
+		SDL_Surface * type_surface = TTF_RenderText_Solid(pixelated, type_buffer, white);
+		type_texture = SDL_CreateTextureFromSurface(renderer, type_surface);
+		SDL_FreeSurface(type_surface);
+	}
 	SDL_QueryTexture(pc_texture, NULL, NULL, &p_w, &p_h);
-	SDL_QueryTexture(add_texture, NULL, NULL, &a_w, &a_h);
 	SDL_QueryTexture(ins_texture, NULL, NULL, &i_w, &i_h);
-	SDL_QueryTexture(mem_texture, NULL, NULL, &m_w, &m_h);
 	SDL_QueryTexture(rom_texture, NULL, NULL, &r_w, &r_h);
-	SDL_QueryTexture(tot_mem_texture, NULL, NULL, &t_w, &t_h);
+	SDL_QueryTexture(gen_texture, NULL, NULL, &g_w, &g_h);
+	SDL_QueryTexture(type_texture, NULL, NULL, &t_w, &t_h);
+	SDL_QueryTexture(type2_texture, NULL, NULL, &t2_w, &t2_h);
 
 
+
+	SDL_Rect gen_rect = {
+		0, 	128,	//size of my ass
+		g_w,	g_h,	//size of my penis 
+	};
 	SDL_Rect pc_rect = {
 		0, 	0,	//size of my ass
 		p_w,	p_h,	//size of my penis 
@@ -104,28 +162,21 @@ extern void debug_memory() {
 		0, 	SCREEN_HEIGHT - 32,	//size of my ass
 		r_w,	r_h,	//size of my penis 
 	};
+	SDL_Rect type2_rect = {
+		0, 	SCREEN_HEIGHT / 3,	//size of my ass
+		t2_w,	t2_h,	//size of my penis 
+	};
 	SDL_Rect tot_mem_rect = {
-		0, 	SCREEN_HEIGHT - 32,	//size of my ass
+		0, 	SCREEN_HEIGHT - 64,	//size of my ass
 		t_w,	t_h,	//size of my penis 
 	};
 
-	SDL_RenderCopy(renderer, add_texture, NULL, &add_rect);
 	SDL_RenderCopy(renderer, ins_texture, NULL, &ins_rect);
 	SDL_RenderCopy(renderer, pc_texture, NULL, &pc_rect);
-	SDL_RenderCopy(renderer, mem_texture, NULL, &mem_rect);
 	SDL_RenderCopy(renderer, rom_texture, NULL, &rom_rect);
-	SDL_RenderCopy(renderer, tot_mem_texture, NULL, &tot_mem_rect);
-
-/*	SDL_FreeSurface(add_surface);
-	SDL_FreeSurface(ins_surface);
-	SDL_FreeSurface(pc_surface);
-*/
-	SDL_DestroyTexture(add_texture);
-	SDL_DestroyTexture(ins_texture);
-	SDL_DestroyTexture(pc_texture);
-	SDL_DestroyTexture(mem_texture);
-	SDL_DestroyTexture(rom_texture);
-	SDL_DestroyTexture(tot_mem_texture);
+	SDL_RenderCopy(renderer, gen_texture, NULL, &gen_rect);
+	SDL_RenderCopy(renderer, type_texture, NULL, &tot_mem_rect);
+	SDL_RenderCopy(renderer, type2_texture, NULL, &type2_rect);
 };
 
 extern void initGraphics() {
@@ -144,19 +195,18 @@ extern void initGraphics() {
 
 extern void eventLoop() {
 	SDL_RenderClear(renderer);
-	//debug_memory();
+	debug_memory();
 	SDL_RenderPresent(renderer);
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_QUIT:
-			cpu_waiting = 0;
-			exit(1);
-		}
-		if (event.type == SDL_QUIT) {
-			cpu_waiting = 0;
-			TTF_CloseFont(pixelated);
+			SDL_DestroyRenderer(renderer);
+			SDL_DestroyWindow(window);
+			TTF_Quit();
 			SDL_Quit();
-		}	
+			cpu_waiting = 0;
+			exit(0);
+		}
 	}
 	//SDL_Delay(16);
 }

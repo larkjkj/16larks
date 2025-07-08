@@ -16,6 +16,16 @@
 
 u16 total_memory[65536] = {};
 u16 pc = 0;
+
+i16 a = 0;
+u16 s = 0;
+i16 x, y = 0;
+
+u16 dp, dbr = 0;
+u16 pb, pbr = 0;
+
+i8 z_flag, n_flag, v_flag, m_flag, x_flag, c_flag, d_flag, i_flag;
+
 u16 instruction = 0;
 u16 address = 0;
 u16 destination = 0;
@@ -27,7 +37,7 @@ int cycle = 0;
 
 static void execInstruction() {
 	//kinda hack but works;	
-	if (instruction >= (sizeof(total_memory) / sizeof(total_memory[0]))) {
+	if (rom[pc] >= (sizeof(total_memory) / sizeof(total_memory[0]))) {
 		printf("ERROR! Address exceed usable memory! \n");
 	}
 	switch (instruction) {
@@ -52,15 +62,15 @@ static void execInstruction() {
 
 	
 		// actual snes
-		case _inc:
-			add();
+		case _inc_addr:
+			inc_addr();
 		break;
 		case _asl_dp:
 			printf("ASL DP \n");
 		break;
 		case _asl_a:
 			printf("ASL A \n");
-	break;
+		break;
 		case _asl_addr:
 			printf("ASL ADDR \n");
 		break;
@@ -87,6 +97,25 @@ static void execInstruction() {
 		break;
 		case _bit_const:
 			printf("BIT CONST \n");
+		break;
+
+		case _clc:
+			clc();
+		break;
+
+		case _cld:
+			cld();
+		break;
+
+		case _cli:
+			cli();
+		break;
+
+		case _clv:
+			clv();
+		break;
+		case _cmp_addr:
+			cmp_addr();
 		break;
 		/*
 		case _and_sr_s:
@@ -145,6 +174,76 @@ static void execInstruction() {
 			printf("AND CONST \n");
 		break;
 
+		case _inc_a:
+			inc_a();
+		break;
+
+		case _inx:
+			inx();
+		break;
+
+		case _iny:
+			iny();
+		break;
+
+		case _sta_addr:
+			sta_addr();
+		break;
+
+		case _stx_addr:
+			stx_addr();
+		break;
+
+		case _sty_addr:
+			sty_addr();
+		break;
+		case _tax:
+			tax();
+		break;
+		
+		case _tay:
+			tay();
+		break;
+		
+		case _tcd:
+			tcd();
+		break;
+		
+		case _tcs:
+			tcs();
+		break;
+
+		case _tdc:
+			tdc();
+		break;
+
+		case _tsc:
+			tsc();
+		break;
+
+		case _tsx:
+			tsx();
+		break;
+		
+		case _txa:
+			txa();
+		break;
+
+		case _txs:
+			txs();
+		break;
+
+		case _txy:
+			txy();
+		break;
+
+		case _tya:
+			tya();
+		break;
+
+		case _tyx:
+			tyx();
+		break;
 		default:
 			printf("Unknown instruction: %04X \n", instruction);
 		break;
@@ -158,8 +257,8 @@ extern void printMemory() {
 
 	for(int i = 0; i < rows; i += 1) {
 		printf("ROW NUMBER %i \n", i);
-		for(int j = 1; j < dist; j += 1) {
-			printf("0x%04X, ", total_memory[dist + j]);
+		for(int j = 0; j < dist; j += 1) {
+			printf("0x%04X, ", total_memory[j]);
 			snprintf(tot_mem_buffer, sizeof(tot_mem_buffer), "0x%04X", total_memory[dist+j]);
 		}
 		printf("\n");
@@ -176,17 +275,16 @@ extern int mainFunc() {
 		#else
 		
 		if (verbose) {
-			printf("Current instruction %x \n", rom[pc]); // this will just print the counter
+			printf("Current pointing at %x \n", rom[pc]); // this will just print the counter
 		}
 
-		instruction = rom[++pc];
+		instruction = rom[pc++];
 		execInstruction();
 		eventLoop();
 		// this adda momentum for the instruction for exec (simulate cycles)
 		//usleep(cycle);
-
+		
 		#endif
-		//break;
 	}
 	return 0;
 }
