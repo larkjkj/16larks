@@ -269,5 +269,5 @@ extern void eventLoop() {
 			exit(0);
 		}
 	}
-	SDL_Delay((u32) 1200);
+	//SDL_Delay((u32) 1200);
 }
