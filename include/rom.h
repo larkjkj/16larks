@@ -7,10 +7,8 @@
 extern void splitRom(char* rom);
 extern void identifyRom();
 
-extern u8* rom;
-
-extern u16 total_memory[65536];
 extern size_t rom_size;
+extern u8* rom;
 extern char* rom_name;
 extern char* rom_type;
 
@@ -53,7 +51,7 @@ static u16 fake_rom[] = {
 	_ato, 0x1000, 0x1009,
 
 	// infinite loop
-	_jmp, _mov,
+	_jmp_addr, _mov,
 	// _jmp, 0xfffa,
 
 	_eoq

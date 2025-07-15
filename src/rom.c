@@ -14,6 +14,9 @@ u8 header_addr;
 extern inline void splitRom(char* name) {
 	FILE* rom_file = fopen(name, "rb");
 
+	if (rom_file == NULL) {
+		printf("Error: rom file is corrupted or non-existent \n");
+	}
 	if (fseek(rom_file, 0, SEEK_END) == 0) {
 		rom_size = ftell(rom_file);
 		if (rom_size == 0) {
@@ -75,18 +78,16 @@ extern inline void splitRom(char* name) {
 			rom_type = "unknown";
 		break;
 	}
-
+	
 	printf("Value from rom_type is: %s %d \n", rom_type, header_addr);
 	sleep(3);
+
 	// identify betw lo and hi
 	//
 //	0x0000 - 0x003F
 //	0x07D0 - 0x203F
 	
 //	0x176F - 
-	if (rom_file == NULL) {
-		printf("Error: rom file is corrupted or non-existent \n");
-	}
 	fclose(rom_file);
 	return;
 }

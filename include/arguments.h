@@ -1,8 +1,8 @@
 #include "defs.h"
 
-#ifndef ARGUMENTS
+#ifndef ARGUMENTS_HEADER
 
-#define ARGUMENTS
+#define ARGUMENTS_HEADER
 extern int cycle;
 extern int norom;
 extern int verbose;
