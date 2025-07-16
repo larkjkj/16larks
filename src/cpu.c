@@ -19,16 +19,23 @@
 #include <string.h>
 
 //This is the ram, probally i will move this to another file in some commit
+//u32 total_memory[65536] = {};
 u32 total_memory[163840] = {};
-u16 stack[65536] = {};
+//static u16 stack[65536] = {};
+
+
+/* Since 8-bit mode is enabled by default,
+ * it's safe to assume his first value */
+u32 compare_hex = 0xFF0000;
 
 u16 flags_arr[10] = {};
-
+u16 stack[65536]={};
 u16 temp_bit;
 u16 byte_high;
 u16 byte_low;
 u32 saved_pc;
-u16 a, s, x, y;
+u32 a;
+u16 s, x, y;
 u32 pc;
 u16 db, dp, dbr, pb, pbr = 0;
 u16 instruction, offset, destination, operation;
@@ -93,8 +100,8 @@ static void execInstruction() {
 		case _adc_sr_s_indr_y:
 			adc_sr_s_indr_y();
 		break;
-		case _adc_dp_indr_x:
-			adc_dp_indr_x();
+		case _adc_dp_x_indr:
+			adc_dp_x_indr();
 		break;
 		case _adc_const:
 			adc_const();
@@ -137,6 +144,9 @@ static void execInstruction() {
 		break;
 		case _and_dp_x:
 			and_dp_x();
+		break;
+		case _and_dp_x_indr:
+			and_dp_x_indr();
 		break;
 		case _asl_dp:
 			asl_dp();
@@ -419,11 +429,17 @@ static void execInstruction() {
 		case _lda_dp_indr_l:
 			lda_dp_indr_l();
 		break;
+		case _lda_dp_indr_l_y:
+			lda_dp_indr_l_y();
+		break;
 		case _lda_dp_indr_y:
 			lda_dp_indr_y();
 		break;
 		case _lda_l_x:
 			lda_l_x();
+		break;
+		case _lda_l:
+			lda_l();
 		break;
 		case _lda_dp_x:
 			lda_dp_x();
@@ -433,6 +449,9 @@ static void execInstruction() {
 		break;
 		case _ldx_addr:
 			ldx_addr();
+		break;
+		case _ldx_const:
+			ldx_const();
 		break;
 		case _ldx_dp:
 			ldx_dp();
@@ -457,6 +476,9 @@ static void execInstruction() {
 		break;
 		case _ora_dp_indr_y:
 			ora_dp_indr_y();
+		break;
+		case _ora_dp_indr:
+			ora_dp_indr();
 		break;
 		case _ora_const:
 			ora_const();
@@ -778,8 +800,7 @@ extern void mainFunc() {
 		scanf("%x", &instruction);
 		#else
 		
-		printf("Current: %u or %x \n", rom[pc], rom[pc]);
-		printf("Next: %u or %x \n", instruction, instruction);
+		printf("Current: %02X \n", rom[pc], rom[pc]);
 		instruction = rom[pc];
 		execInstruction();
 		printMemory();

@@ -18,13 +18,19 @@ extern u16 byte_high;
 extern u16 byte_low;
 extern u32 saved_pc;
 extern u16 flags_arr[10];
+extern u32 compare_hex;
 
 //actual cpu
 extern u32 pc; // program counter 
 
-extern u16 a;
+/* WARNING, Accumulator is a 16-bit register
+ * but for future reasons i changed to a 32-bit
+ * and bitmasked it(it makes sense since 24-bit
+ * operations can't be made with 16-bit due to
+ * these 8-bit difference); a temp_a cast can be
+ * made but it costs a operation(decreases speed)*/
+extern u32 a;
 
-extern u16 stack[65536];
 extern u16 s;
 
 extern u16 x;

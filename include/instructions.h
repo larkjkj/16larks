@@ -32,7 +32,7 @@ enum emulator_instructions {
 };
 
 enum cpu_instructions {
-	_adc_dp_indr_x	= 0x61,
+	_adc_dp_x_indr	= 0x61,
 	_adc_sr_s 	= 0x63,
 	_adc_dp		= 0x65,
 	_adc_dp_indr_l	= 0x67,
@@ -49,7 +49,7 @@ enum cpu_instructions {
 	_adc_long_x 	= 0x7F,
 			
 	// AND INS
-	_and_dp_x	= 0x21,
+	_and_dp_x_indr	= 0x21,
 	_and_sr_s 	= 0x23,
 	_and_dp		= 0x25,
 	_and_dp_indr_l	= 0x27,
@@ -60,7 +60,7 @@ enum cpu_instructions {
 	_and_dp_y 	= 0x31,
 	_and_dp_indr 	= 0x32,
 	_and_sr_s_indr_y= 0x33,
-	_and_dp_x_ind	= 0x35,
+	_and_dp_x	= 0x35,
 	_and_dp_y_ind 	= 0x37,
 	_and_addr_y 	= 0x39,
 	_and_addr_x 	= 0x3D,
@@ -179,11 +179,13 @@ enum cpu_instructions {
 	_lda_addr_x	= 0xB9,
 	_lda_addr_y	= 0xBD,
 	_lda_dp_indr_l	= 0xA5,
-	_lda_dp_indr_y	= 0xB7,
+	_lda_dp_indr_l_y= 0xB7,
 	_lda_dp		= 0xA7,
+	_lda_l		= 0xAF,
 	_lda_l_x	= 0xBF,
+	_ldx_const	= 0xA2,
 	_lda_dp_x	= 0xA1,
-	_lda_dp_y	= 0xB1,
+	_lda_dp_indr_y	= 0xB1,
 	_ldx_addr	= 0xAE,
 	_ldx_addr_y	= 0xBE,
 	_ldx_dp		= 0xA6,
@@ -212,6 +214,7 @@ enum cpu_instructions {
 	_ora_dp_x	= 0x15,
 	_ora_dp_x_indr	= 0x01,
 	_ora_dp_indr_y	= 0x11,
+	_ora_dp_indr	= 0x12,
 	_ora_sr_s	= 0x03,
 	_ora_addr_y	= 0x19,
 	_ora_addr_x	= 0x1D,

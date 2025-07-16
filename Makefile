@@ -37,7 +37,7 @@ ifeq ($(ps2),1)
 			   -L$(PS2SDK)/ports/lib \
 			   -L$(GSKIT)/lib
 
-	flags		+= -D_PS2=1 -D_EE 
+	flags		+= -D_PS2=1 -D_EE -mno-crc 
 	
 	ldflags		:= -lSDL2 -lSDL2_ttf -lgskit_toolkit -lgskit \
 			   -ldmakit -lpad -lpatches -laudsrv -lps2_drivers \
