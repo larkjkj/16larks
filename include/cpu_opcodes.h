@@ -41,12 +41,14 @@ extern void asl_dp();
 extern void asl_dp_x();
 extern void asl_addr_x();
 
+extern void and_l();
 extern void and_addr();
 extern void and_dp();
 extern void and_dp_y();
 extern void and_dp_x();
 extern void and_addr_y();
 extern void and_addr_x();
+extern void and_dp_indr_y();
 extern void and_dp_x_indr();
 extern void and_const();
 extern void and_sr_s();
@@ -128,7 +130,7 @@ extern void inx();
 extern void iny();
 
 extern void jsr_addr();
-extern void jsr_long();
+extern void jsr_l();
 extern void jsr_addr_x_indr();
 
 extern void jmp_addr();
@@ -166,6 +168,7 @@ extern void lsr_dp_x();
 extern void lsr_addr_x();
 
 extern void ora_dp();
+extern void ora_l();
 extern void ora_dp_indr_y();
 extern void ora_dp_indr();
 extern void ora_dp_x_indr();
@@ -205,6 +208,7 @@ extern void ror_dp_x();
 extern void ror_addr_x();
 
 extern void rts();
+extern void rtl();
 extern void rep();
 
 extern void sbc_addr();

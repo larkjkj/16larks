@@ -19,27 +19,33 @@
 #include <string.h>
 
 //This is the ram, probally i will move this to another file in some commit
-//u32 total_memory[65536] = {};
 u32 total_memory[163840] = {};
-//static u16 stack[65536] = {};
 
+/* Stack needs to be u8 to compatibility reasons
+ * Maybe i change to u32 type to make it more safe
+ * to make byte manipulation, but who knows :) */
+u8 stack[65536]={};
 
 /* Since 8-bit mode is enabled by default,
  * it's safe to assume his first value */
 u32 compare_hex = 0xFF0000;
+u32 brk_addr = 0x00FFFE;
+u32 cop_addr = 0x00FFF4;
 
-u16 flags_arr[10] = {};
-u16 stack[65536]={};
+u16 flags_arr[4] = {};
+
 u16 temp_bit;
 u16 byte_high;
 u16 byte_low;
 u32 saved_pc;
+u32 address;
+
 u32 a;
-u16 s, x, y;
 u32 pc;
+
+u16 s, x, y;
 u16 db, dp, dbr, pb, pbr = 0;
 u16 instruction, offset, destination, operation;
-u32 address;
 
 u8 z_flag, n_flag, v_flag, m_flag, x_flag, c_flag, d_flag, i_flag, e_flag, b_flag;
 u8 p = 0;
@@ -51,13 +57,7 @@ const int rows = 8;
 char tot_mem_buffer[sizeof(dist * rows)];
 char old_tot_mem_buffer[sizeof(tot_mem_buffer)] = {};
 
-//satic int cpu_waiting;
 int cycle = 0;
-
-//stack pointer
-/*for(;;)
- s -=  1;
-*/
 
 static void execInstruction() {
 	//kinda hack but works;	
@@ -127,6 +127,9 @@ static void execInstruction() {
 		case _and_addr:
 			and_addr();
 		break;
+		case _and_l:
+			and_l();
+		break;
 		case _and_addr_y:
 			and_addr_y();
 		break;
@@ -135,6 +138,9 @@ static void execInstruction() {
 		break;
 		case _and_dp_indr_l:
 			printf("AND DP INDIRECT LONG \n");
+		break;
+		case _and_dp_indr_y:
+			and_dp_indr_y();
 		break;
 		case _and_dp:
 			and_dp();
@@ -346,8 +352,8 @@ static void execInstruction() {
 		case _jsr_addr:
 			jsr_addr();
 		break;
-		case _jsr_long:
-			jsr_long();
+		case _jsr_l:
+			jsr_l();
 		break;
 		case _jsr_addr_x_indr:
 			jsr_addr_x_indr();
@@ -471,11 +477,17 @@ static void execInstruction() {
 		case _ldy_const:
 			ldy_const();
 		break;
+		case _ora_l:
+			ora_l();
+		break;
 		case _ora_dp:
 			ora_dp();
 		break;
 		case _ora_dp_indr_y:
 			ora_dp_indr_y();
+		break;
+		case _ora_dp_x_indr:
+			ora_dp_x_indr();
 		break;
 		case _ora_dp_indr:
 			ora_dp_indr();
@@ -489,9 +501,6 @@ static void execInstruction() {
 		case _ora_dp_x:
 			ora_dp_x();
 		break;	
-		case _ora_dp_x_indr:
-			ora_dp_x_indr();
-		break;
 		case _ora_sr_s:
 			ora_sr_s();
 		break;
@@ -575,6 +584,9 @@ static void execInstruction() {
 		break;
 		case _rts:
 			rts();
+		break;
+		case _rtl:
+			rtl();
 		break;
 		case _sbc_dp_x_indr:
 			sbc_dp_x_indr();
@@ -769,7 +781,7 @@ static void execInstruction() {
 			xce();
 		break;
 		default:
-			printf("Unknown instruction: %04X \n", rom[pc]);
+			printf("Unknown instruction: %X \nCheck CPU instructions header \n", instruction);
 		break;
 	}
 }
@@ -800,12 +812,11 @@ extern void mainFunc() {
 		scanf("%x", &instruction);
 		#else
 		
-		printf("Current: %02X \n", rom[pc], rom[pc]);
-		instruction = rom[pc];
+		instruction = rom[pc++];
+		printf("Current: %02X \n", instruction);
 		execInstruction();
 		printMemory();
 		eventLoop();
-		rom[pc++];
 		// this adda momentum for the instruction for exec (simulate cycles)
 		//usleep(cycle);
 		#endif

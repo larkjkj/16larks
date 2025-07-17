@@ -15,6 +15,12 @@ extern char* rom_type;
 //extern u16 fake_rom[];
 //split shit
 
+#define _ato 0x03
+#define _mov 0x01
+#define _prn 0x00
+#define _add 0x02
+#define _eoq 0x04
+
 static u16 fake_rom[] = {
 	_mov, 0x0012, 0x00FF, _mov, 0x00A0, 0x0042,
 	_mov, 0x00C1, 0x0F0F, _mov, 0x0030, 0x1234,

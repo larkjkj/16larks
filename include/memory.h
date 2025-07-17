@@ -4,7 +4,8 @@
 #include "defs.h"
 #include "arguments.h"
 
-extern u16 stack[65536];
+// Stack is a reserved memory
+extern u8 stack[65536];
 
 // Ram Memory is the actual RAM
 extern u32 ram_memory[65536];

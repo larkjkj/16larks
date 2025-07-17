@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "rom.h"
 #include "cpu.h"
@@ -124,7 +125,7 @@ inline void adc_dp_indr_l() {
 	byte_low = (total_memory[address] + 1);
 	byte_high = (total_memory[address + 2]);
 
-	address = (byte_high << 16 | ((byte_low << 8) | address));
+	address = (byte_high << 8 | byte_low | address);
 
 	c_flag = ((a & compare_hex) ? 0 : 1);
 
@@ -155,10 +156,10 @@ inline void adc_dp() {
 }
 
 inline void adc_dp_indr() {
-	offset = rom[++pc];
+	offset = rom[++pc] + dp;
 	compare_hex = 0xFFFF;	
-	byte_low = (total_memory[offset + dp]);
-	byte_high = (total_memory[offset + dp + 1]);
+	byte_low = (total_memory[offset]);
+	byte_high = (total_memory[offset + 1]);
 
 	address = (byte_high << 8 | byte_low);
 	// This shouldn't be a problem since
@@ -212,7 +213,7 @@ inline void adc_l() {
 	address = rom[++pc];
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
-	address |= (byte_high << 16 | byte_low << 8 & address);
+	address |= (byte_high << 8 | byte_low);
 
 	a += total_memory[address] + c_flag;
 	flags_arr[0] = a;
@@ -317,7 +318,7 @@ inline void and_addr() {
 
 	address = (byte_high << 8 | byte_low);
 
-	a = (total_memory[address] & a);
+	a = (total_memory[address] & 0xFFFFFF);
 	flags_arr[0] = a;
 
 	update_n_flag(1, flags_arr);
@@ -336,12 +337,14 @@ inline void and_dp() {
 
 inline void and_const() {
 	byte_low = rom[++pc];
-	byte_high = rom[++pc];
 
-	if (!m_flag)
-		address = (byte_high << 16 | byte_low << 8 | address);
-	else
+	if (!m_flag) {
+		byte_high = rom[++pc];
+		address = (byte_high << 8 | byte_low);
+	}
+	else {
 		address = (byte_low);
+	}
 
 	a &= (address);
 	flags_arr[0] = a;
@@ -351,35 +354,59 @@ inline void and_const() {
 }
 
 inline void and_dp_x_indr() {
-	offset = rom[++pc];
-	address = (offset + dp + x);
-	byte_low = (address + 1);
+	address = (rom[++pc] + dp + x);
+	byte_low = (total_memory[address]);
+	byte_high = (total_memory[address + 1]);
 
-	address = ((total_memory[byte_low] << 8 | total_memory[address]) & 0xFFFF);
+	address = ((byte_high << 8 | byte_low));
+	a &= total_memory[address];
 	flags_arr[0] = a;
-	a &= (total_memory[address]);
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
-	return;
+}
+
+inline void and_dp_indr_y() {
+	address = (rom[++pc] + dp);
+	byte_low = (total_memory[address]);
+	byte_high = (total_memory[address + 1]);
+
+	address = ((byte_high << 8 | byte_low));
+	a &= total_memory[address + y];
+	flags_arr[0] = a;
+
+	update_n_flag(1, flags_arr);
+	update_z_flag(1, flags_arr);
 }
 
 inline void and_dp_x() {
 	address = rom[++pc] + dp + x;
-	a &= (address);
+	a &= (total_memory[address]);
 	flags_arr[0] = a;
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
 
+inline void and_l() {
+	address = rom[++pc];
+	byte_low = rom[++pc];
+	byte_high = rom[++pc];
+
+	address = (byte_high << 8 | byte_low | address);
+	a &= (total_memory[address] & 0xFFFFFF);
+
+	flags_arr[0] = a;
+	update_n_flag(1, flags_arr);
+	update_z_flag(1, flags_arr);
+}
 
 inline void and_addr_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
 	address = (byte_high << 8 | byte_low) + x;
-	a = (total_memory[address] & a);
+	a &= (total_memory[address]);
 	flags_arr[0] = a;
 
 	update_n_flag(1, flags_arr);
@@ -391,7 +418,7 @@ inline void and_addr_y() {
 	byte_high = rom[++pc];
 
 	address = (byte_high << 8 | byte_low) + y;
-	a = (total_memory[address] & a);
+	a &= (total_memory[address]);
 
 	flags_arr[0] = a;
 	update_n_flag(1, flags_arr);
@@ -558,13 +585,26 @@ inline void bit_const() {
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
-
 inline void brk_emu() {
-	if (!m_flag)
-		pc = rom[(0x00ffe6 & 0xffffff)];
-	else
-		pc = rom[(0x00fff6 & 0xffffff)];
-	
+	//push the k register
+	//(u8) signature_byte = rom[++pc];
+	byte_low = rom[++pc];
+	byte_high = (pc + 2);
+	//Emulation Mode
+	if (!e_flag) {
+		stack[--s] = pb;
+		brk_addr = (u32) 0xfffe;
+		cop_addr = (u32) 0xfff4;
+	}
+	//Native Mode
+	else {
+		stack[--s] = (0x0000 | pb);
+		byte_high = rom[++pc];
+		address = (byte_high << 8 | byte_low);
+		brk_addr = (u32) 0xffe6;
+		cop_addr = (u32) 0xffe4;
+	}
+	pc = (u32) rom[brk_addr];
 	i_flag = 1;
 }
 
@@ -592,13 +632,13 @@ inline void bpl() {
 }
 
 inline void bra() {
-	address = ((i8) rom[++pc]);
-	pc = pc + address;
+	address = ((i8) (pc + 1));
+	pc = pc + (u16) address;
 }
 
 inline void brl() {
-	byte_low = rom[++pc];
-	byte_high = rom[++pc];
+	byte_low = (pc + 1);
+	byte_high = (pc + 2);
 
 	address &= (byte_high << 8 | byte_low) & 0xFFFF;
 	pc = (pc + (i16) address);
@@ -645,6 +685,7 @@ inline void cmp_dp_x_indr() {
 	address = (byte_high << 8 | byte_low);
 	operation = (a - total_memory[address]);
 	
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 	flags_arr[0] = operation;
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -653,6 +694,7 @@ inline void cmp_dp_x_indr() {
 inline void cmp_sr_s() {
 	operation = (a - (i8) stack[s]);
 
+	c_flag = ((a >= stack[s]) ? 1 : 0);
 	flags_arr[0] = operation;
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -662,7 +704,13 @@ inline void cmp_const() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	operation = (m_flag ? (a - (byte_high << 8) | byte_low) : (a - rom[++pc]));
+	/* This line works and is extremelly efficient
+	 * But kinda complicated to read, so idk if i 
+	 * should replicate this :P*/
+
+	 operation = (m_flag ? (a - (byte_high << 8) | byte_low) : (a - rom[++pc]));
+
+	c_flag = ((a >= (m_flag ? (byte_high << 8 | byte_low) : (byte_low))) ? 1 : 0);
 
 	flags_arr[0] = operation;
 
@@ -673,7 +721,6 @@ inline void cmp_const() {
 inline void cmp_addr() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
-	
 	address = (byte_high << 8 | byte_low);
 	flags_arr[0] = a - total_memory[address];
 
@@ -685,8 +732,8 @@ inline void cmp_l() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (rom[++pc] << 16 | byte_high << 8 | byte_low);
-
+	address = (byte_high << 16 | byte_low << 8 | rom[++pc]);
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 	flags_arr[0] = total_memory[address] - a;
 
 	update_n_flag(1, flags_arr);
@@ -698,6 +745,7 @@ inline void cmp_l_x() {
 	byte_high = rom[++pc];
 
 	address = (byte_high << 16 | byte_low << 8 | rom[++pc]) + x;
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 
 	flags_arr[0] = total_memory[address] - a;
 
@@ -712,6 +760,7 @@ inline void cmp_dp_indr_y() {
 
 	address = (byte_high << 8 | byte_low) + y;
 	operation = (a - total_memory[address]);
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 
 	flags_arr[0] = operation;
 
@@ -737,7 +786,8 @@ inline void cmp_dp_indr() {
 	address = (byte_high << 8 | byte_low);
 	operation = (a - total_memory[address]);
 	flags_arr[0] = operation;
-
+	
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
@@ -747,6 +797,7 @@ inline void cmp_dp_x() {
 
 	operation = (a - total_memory[address]);
 
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 	flags_arr[0] = operation;
 
 	update_n_flag(1, flags_arr);
@@ -774,31 +825,32 @@ inline void cmp_addr_x() {
 	address = (byte_high << 8 | byte_low) + x;
 	operation = (a - total_memory[address]);
 	flags_arr[0] = operation;
-
+	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
 
 inline void cop_const() {
+	/* Idk what this opcode do lmao*/
 	printf("Not implemented COP Const \n");
 	if (!m_flag) {
 		
 	} else {
 
 	}
-/*
-	update_n_flag(1, flags_arr);
-	update_z_flag(1, flags_arr);*/
 }
 
 inline void cpx_addr() {
 	byte_low = rom[++pc];
-	byte_high = rom[++pc];
-	
-	address = (byte_high << 8 | byte_low);
+
+	if (!x_flag) {
+		byte_high = rom[++pc];
+	}
+
+	address = (!x_flag ? (byte_high << 8 | byte_low) : byte_low) & 0xFFFF;
 
 	flags_arr[0] = x - total_memory[address];
-
+	c_flag = ((x >= total_memory[address]) ? 1 : 0);
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 	/*
@@ -807,13 +859,10 @@ inline void cpx_addr() {
 }
 
 inline void cpx_dp() {
-	byte_low = rom[++pc] + dp;
-	byte_high = rom[++pc] + dp;
-	
-	address = (byte_high << 8 | byte_low);
+	address = rom[++pc] + dp;
 
 	flags_arr[0] = x - total_memory[address];
-
+	c_flag = (( x >= (total_memory[address])) ? 1 : 0);
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 	/*
@@ -821,45 +870,45 @@ inline void cpx_dp() {
 	z_flag = ((total_memory[address] & a == 0) | (total_memory[address] == a) ? 1 : 0);*/
 }
 inline void cpx_const() {
-	if (x_flag == 0) {
-		byte_low = rom[++pc];
+	byte_low = rom[++pc];
+	if (!x_flag) {
 		byte_high = rom[++pc];
-
-		address = (byte_high << 8 | byte_low);
-	} else {
-		address = rom[++pc];
 	}
-
-	flags_arr[0] = x - address;//stuff;
+	address = ((!x_flag) ? (byte_high << 8 | byte_low) : (byte_low));
+	c_flag = ((x >= address) ? 1 : 0);
+	operation = x - address;
+	flags_arr[0] = operation;//stuff;
 
 	update_n_flag(1, flags_arr);
-	update_n_flag(1, flags_arr);
+	update_z_flag(1, flags_arr);
 }
 
 
 inline void cpy_const() {
-	if (x_flag == 0) {
-		byte_low = rom[++pc];
+	byte_low = rom[++pc];
+	if (!x_flag) {
 		byte_high = rom[++pc];
-
-		address = (byte_high << 8 | byte_low);
-	} else {
-		address = rom[++pc];
-	}
-
-	flags_arr[0] = y - address;//stuff;
+	} 
+	address = ((!x_flag) ? (byte_high << 8 | byte_low) : (byte_low));
+	c_flag = ((y >= address) ? 1 : 0);
+	operation = y - address;
+	flags_arr[0] = operation;//stuff;
 
 	update_n_flag(1, flags_arr);
-	update_n_flag(1, flags_arr);
+	update_z_flag(1, flags_arr);
 }
 
 inline void cpy_addr() {
 	byte_low = rom[++pc];
-	byte_high = rom[++pc];
+	if (!x_flag) {
+		byte_high = rom[++pc];
+	}
 	
-	address = (byte_high << 8 | byte_low);
+	address = ((!x_flag) ? (byte_high << 8 | byte_low) : (byte_low));
 
-	flags_arr[0] = y - total_memory[address];
+	c_flag = ((y >= total_memory[address]) ? 1 : 0);
+	operation = y - total_memory[address];
+	flags_arr[0] = operation;
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -870,7 +919,7 @@ inline void cpy_dp() {
 	byte_high = rom[++pc] + dp;
 	
 	address = (byte_high << 8 | byte_low);
-
+	c_flag = ((y >= total_memory[address]) ? 1 : 0);
 	flags_arr[0] = y - total_memory[address];
 
 	update_n_flag(1, flags_arr);
@@ -1279,14 +1328,15 @@ inline void jsr_addr() {
 	pc = address;
 }
 
-inline void jsr_long() {
+inline void jsr_l() {
 	address = rom[++pc];
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address);
+	address = (byte_high << 8 | byte_low | address);
 
-	stack[s--] = (address + 1);
+	stack[--s] = (address + 2);
+	saved_pc = ((pb << 16 | (pc + 2) << 8) | (pc + 1));
 
 	pc = address;
 }
@@ -1297,25 +1347,32 @@ inline void jsr_addr_x_indr() {
 }
 
 inline void lda_addr() {
-	address = rom[++pc];
+	address = (rom[++pc]);
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address);
-	a = total_memory[address];
+	/* Why we move specific bytes? 
+	 * We do that since SNES can read up to 16(MB)/24-bit
+	 * addresses, so we need to make a bitshift with 32-bit
+	 * integers, else we can overflow the total
+	 * memory and cause invalid operations or segfaults */
+
+	address = ((byte_high << 8 | byte_low | address));
+	
+	a = (total_memory[address & 0xFFFFFF]);
 
 	flags_arr[0] = a;
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
+	printf("End \n");
 }
 
 inline void lda_const() {
 	address = rom[++pc];
-	byte_low = rom[++pc];
-	byte_high = rom[++pc];
 
 	if (!m_flag) {
+		byte_low = rom[++pc];
 		address = ((byte_high << 16 | byte_low << 8 | address));
 	} else {
 		address = ((byte_low << 8 | address));
@@ -1454,14 +1511,13 @@ inline void ldx_dp() {
 }
 
 inline void ldx_const() {
-	address = rom[++pc];
 	byte_low = rom[++pc];
-	byte_high = rom[++pc];
 
-	if (!x_flag)
-		address |= (byte_high << 16 | byte_low << 8);
-	else
-		address = ((byte_low << 8 | address) & 0xFF);
+	if (!x_flag) {
+		byte_high = rom[++pc];
+	}
+
+	address = (!x_flag ? ((byte_high << 8 | byte_low) & 0xFFFF) : byte_low);
 
 	x = address;
 
@@ -1530,13 +1586,11 @@ inline void ldy_addr_x() {
 
 inline void ldy_const() {
 	byte_low = rom[++pc];
-	byte_high = rom[++pc];
-
+	
 	if (x_flag) {
-		address = rom[++pc];
-	} else {
-		address = (byte_high << 8 | byte_low);
+		byte_high = rom[++pc];
 	}
+	address = (!x_flag ? (byte_high << 8 | byte_low) & 0xFFFF : (byte_low));
 	y = address;
 
 	flags_arr[0] = y;
@@ -1625,6 +1679,18 @@ inline void ldy_dp_x() {
 	update_z_flag(1, flags_arr);
 }
 
+inline void ora_l() {
+	address = rom[++pc];
+	byte_low = rom[++pc];
+	byte_high = rom[++pc];
+
+	a |= total_memory[address];
+
+	flags_arr[0] = a;
+	update_n_flag(1, flags_arr);
+	update_z_flag(1, flags_arr);
+}
+
 inline void ora_dp() {
 	address = rom[++pc];
 	a = (total_memory[address + dp] | a);	
@@ -1636,6 +1702,21 @@ inline void ora_dp() {
 
 inline void ora_dp_indr() {
 	address = rom[++pc] + dp;
+
+	byte_low = (total_memory[address]);
+	byte_high = (total_memory[address + 1]);
+
+	address = (byte_high << 8 | byte_low);
+	operation = (a ^ total_memory[address]);
+
+	flags_arr[0] = operation;
+
+	update_n_flag(1, flags_arr);
+	update_z_flag(1, flags_arr);
+}
+
+inline void ora_dp_x_indr() {
+	address = rom[++pc] + dp + x;
 
 	byte_low = (total_memory[address]);
 	byte_high = (total_memory[address + 1]);
@@ -1688,20 +1769,6 @@ inline void ora_dp_x() {
 	a = (total_memory[address + dp + x] | a);	
 	flags_arr[0] = a;
 	
-	update_n_flag(1, flags_arr);
-	update_z_flag(1, flags_arr);
-}
-
-inline void ora_dp_x_indr() {
-	address = (dp + x);
-
-	byte_low = total_memory[address];
-	byte_high = total_memory[address + 1];
-	
-	address = (byte_high << 8 | byte_low);
-
-	operation = (a | total_memory[address]);
-	flags_arr[0] = operation;
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
@@ -1994,7 +2061,7 @@ inline void rol_addr() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address);
+	address = (byte_high << 8 | byte_low | address);
 	//Ensure temporary equals to zero
 	temp_bit = 0;
 	temp_bit |= (c_flag);
@@ -2013,7 +2080,7 @@ inline void ror_addr() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address);
+	address = (byte_high << 8 | byte_low | address);
 	//Ensure temporary equals to zero
 	temp_bit = 0;
 	temp_bit |= (c_flag);
@@ -2032,7 +2099,7 @@ inline void rol_addr_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address) + x;
+	address = (byte_high << 8 | byte_low | address) + x;
 
 	//Ensure temporary equals to zero
 	temp_bit = 0;
@@ -2052,7 +2119,7 @@ inline void ror_addr_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address) + x;
+	address = (byte_high << 8 | byte_low | address) + x;
 
 	//Ensure temporary equals to zero
 	temp_bit = 0;
@@ -2128,15 +2195,21 @@ inline void ror_dp_x() {
 }
 
 inline void rts() {
-	address = stack[pc];
-	byte_low = stack[pc + 1];
-	byte_high = stack[pc + 2];
-
-	address = ((byte_high << 16 | byte_low << 8 | address) + 1);
-
 	pc = saved_pc + 1;
 }
 
+inline void rtl() {
+/*	address = stack[pc];
+	byte_low = stack[pc + 1];
+	byte_high = stack[pc + 2];
+
+	address = ((byte_high << 8 | byte_low  | address) + 1);
+	
+	Leave this code as reserved for future implementation...
+*/
+
+	pc = saved_pc + 1;
+}
 inline void tax() {
 	x = a;
 
@@ -2460,7 +2533,7 @@ inline void sbc_l() {
 
 	address = ((byte_high << 16 | byte_low << 8 | address) & 0xFFFFFF);
 
-	a &= (0xFFFF - address);
+	a &= (0xFFFFFF - address);
 	flags_arr[0] = a;
 
 	update_n_flag(1, flags_arr);
@@ -2472,7 +2545,7 @@ inline void sbc_l_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (((u32) byte_high) << 16 | ((u32) byte_low) << 8 | address) + x;
+	address = ((byte_high << 8 | byte_low | address) + x);
 
 	a -= (total_memory[address] - (!c_flag ? 1 : 0));
 
@@ -2519,38 +2592,26 @@ inline void sta_sr_s() {
 }
 
 inline void sta_dp() {
-	byte_low = rom[++pc];
-	byte_high = rom[++pc];
-
-	if (!m_flag)
-		address = (byte_high << 8 | byte_low);
-	else
-		address = (byte_low);
-
-	address = rom[++pc] + dp;
-	total_memory[address] = (u16) a;
+	address = total_memory[(rom[++pc] + dp)];
+	
+	total_memory[address] = a;
 }
 
-//check these 2
 inline void sta_dp_indr_l() {
-	offset = rom[++pc];
-
-	address = offset + dp;
+	address = total_memory[(rom[++pc] + dp)];
 	byte_low = (total_memory[address + 1]);
 	byte_high = (total_memory[address + 2]);
 
-	total_memory[address] |= (byte_high << 16 | byte_low << 8);
-	total_memory[address] = (u16) a;
+	address = (byte_high << 8 | byte_low | address);
+	total_memory[address] = a;
 }
 
 inline void sta_dp_indr_l_y() {
-	offset = rom[++pc];
-
-	address = offset + dp;
+	address = total_memory[(rom[++pc])];
 	byte_low = (total_memory[address + 1]);
 	byte_high = (total_memory[address + 2]);
 
-	address = (byte_high << 16 | byte_low << 8 | total_memory[address]) + y;
+	address = (byte_high << 8 | byte_low | address) + y;
 	total_memory[address] = a;
 }
 
@@ -2573,12 +2634,14 @@ inline void sta_addr() {
 }
 
 inline void sta_addr_x() {
+	printf("Start \n");
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
 	address = (byte_high << 8 | byte_low) + x;
 
-	total_memory[address] = a;
+	total_memory[address] = (0x000000 | a);
+	printf("End \n");
 }
 
 inline void sta_addr_y() {
@@ -2595,7 +2658,7 @@ inline void sta_l() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address);
+	address = (byte_high << 8 | byte_low | address);
 	total_memory[address] = a;
 }
 
@@ -2604,8 +2667,8 @@ inline void sta_l_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = ((u32) byte_high << 16 | (u32) byte_low << 8 | address) + x;
-	total_memory[address] = a;
+	address = (byte_high << 8 | byte_low | address) + x;
+	(total_memory[address] = a) & 0xFFFFFF;
 }
 
 inline void sta_dp_x() {
@@ -2618,33 +2681,40 @@ inline void sta_sr_s_y() {
 	byte_low = total_memory[address];
 	byte_high = total_memory[address + 1];
 	
-	address = (byte_low | byte_high << 8) + y;
+	address = ((byte_high << 8 | byte_low) + y);
 	total_memory[address] = a;
-	return;
 }
 
 inline void sta_dp_x_indr() {
 	offset = (rom[++pc] + dp + x);
+
 	byte_low = total_memory[offset];
 	byte_high = total_memory[offset + 1];
-	address = (byte_low | byte_high << 8);
+
+	address = (byte_high << 8 | byte_low);
 	total_memory[address] = a;
-	return;
 }
 
 inline void sta_dp_indr_y() {
 	offset = (rom[++pc] + dp);
+
 	byte_low = total_memory[offset];
 	byte_high = total_memory[offset + 1];
-	address = (byte_low | byte_high << 8) + y;
+
+	address = ((byte_high << 8 | byte_low) + y);
 	total_memory[address] = a;
-	return;
 }
 
 inline void stp() {
 	printf("CPU Halted, waiting for reset, did something goes wrong? \n");
-	cpu_waiting = 0;
-	return;
+	cpu_waiting = 0; //CPU is halted but keeps running
+			 //use exit(1); but i want to see
+			 //things break :)
+
+	for(int i = 3; i != 0; i--) {
+		printf("Continuing in: %i... \n", i);
+		sleep(1);
+	}
 }
 
 inline void stx_dp() {
@@ -2702,7 +2772,7 @@ inline void stz_addr() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = ((byte_high << 8 | byte_low) & 0xFFFF);
+	address |= ((byte_high << 8 | byte_low));
 
 	total_memory[address] = 0;
 };

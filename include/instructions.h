@@ -55,9 +55,9 @@ enum cpu_instructions {
 	_and_dp_indr_l	= 0x27,
 	_and_const	= 0x29,
 	_and_addr 	= 0x2D,
-	_and_long 	= 0x2F,
+	_and_l	 	= 0x2F,
 
-	_and_dp_y 	= 0x31,
+	_and_dp_indr_y 	= 0x31,
 	_and_dp_indr 	= 0x32,
 	_and_sr_s_indr_y= 0x33,
 	_and_dp_x	= 0x35,
@@ -171,7 +171,7 @@ enum cpu_instructions {
 	_jmp_addr_indr_l= 0xDC,
 	
 	_jsr_addr	= 0x20,
-	_jsr_long	= 0x22,
+	_jsr_l		= 0x22,
 	_jsr_addr_x_indr= 0xFC,
 	
 	_lda_addr	= 0xAD,
@@ -211,6 +211,7 @@ enum cpu_instructions {
 	_ora_dp		= 0x05,
 	_ora_const	= 0x09,
 	_ora_addr	= 0x0D,
+	_ora_l		= 0x0F,
 	_ora_dp_x	= 0x15,
 	_ora_dp_x_indr	= 0x01,
 	_ora_dp_indr_y	= 0x11,
