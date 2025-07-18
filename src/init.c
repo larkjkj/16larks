@@ -16,8 +16,11 @@
 #include "SDL_ttf.h"
 #include "SDL_rect.h"
 
-#ifdef _PS2
+#ifdef _EE
+#define NEWLIB_PORT_AWARE
 #include "iopcontrol.h"
+#include "io_common.h"
+#include "fileXio_rpc.h"
 #include "sifrpc-common.h"
 #include "sbv_patches.h"
 #include "ps2_filesystem_driver.h"
@@ -95,7 +98,7 @@ extern void debug_memory() {
 
 	snprintf(pc_buffer, sizeof(pc_buffer), "PC: %i", pc);
 	snprintf(ins_buffer, sizeof(ins_buffer), "INS: %X", instruction);
-	snprintf(rom_buffer, sizeof(rom_buffer), "ROM: %s", rom_name);
+	snprintf(rom_buffer, sizeof(rom_buffer), "ROM FILE: %s HEADER:", rom_name, rom_header);
 	snprintf(gen_buffer, sizeof(gen_buffer), "A: %i \n X: %i \n Y: %i \n DP: %i \n", a, x, y, dp);
 	snprintf(type_buffer, sizeof(type_buffer), "ROM_TYPE: %s", rom_type);
 	snprintf(type2_buffer, sizeof(type2_buffer), "Z_FLAG: %i  \n C_FLAG: %i  \n X_FLAG: %i  \n N_FLAG: %i  \n D_FLAG: %i  \n", z_flag, c_flag, x_flag, n_flag, d_flag);
@@ -216,7 +219,7 @@ extern void debug_memory() {
 	SDL_RenderCopy(renderer, total_mem_texture, NULL, &tm_rect);
 };
 
-#ifdef _PS2
+#ifdef _EE
 extern void reset_IOP() {
 	SifInitRpc(0);
 	while (!SifIopReset(NULL, 0)) {};
@@ -228,9 +231,10 @@ extern void reset_IOP() {
 #endif
 
 extern void initGraphics() {
-	#ifdef _PS2
+	#ifdef _EE
 	reset_IOP();
-	//init_ps2_filesystem_driver();
+	init_ps2_filesystem_driver();
+	fileXioOpen("host", 0);
 	#endif
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("Error initializing video \n");
@@ -255,6 +259,7 @@ pixelated = TTF_OpenFont("fonts/Pixellari.ttf", 17);
 };
 
 extern void eventLoop() {
+	printf("Debug stuff is enabled, perfomance will be worse until i use a new font lib \n");
 	SDL_RenderClear(renderer);
 	debug_memory();
 	SDL_RenderPresent(renderer);
@@ -269,5 +274,5 @@ extern void eventLoop() {
 			exit(0);
 		}
 	}
-	//SDL_Delay((u32) 1200);
+	SDL_Delay(16);
 }

@@ -24,7 +24,7 @@ u32 total_memory[163840] = {};
 /* Stack needs to be u8 to compatibility reasons
  * Maybe i change to u32 type to make it more safe
  * to make byte manipulation, but who knows :) */
-u8 stack[65536]={};
+u8 stack_memory[65536]={};
 
 /* Since 8-bit mode is enabled by default,
  * it's safe to assume his first value */
@@ -805,7 +805,6 @@ extern void printMemory() {
 extern void mainFunc() {
 	cpu_waiting = 0;
 	while (!cpu_waiting) {
-		//printMemory();
 		#ifdef INTERACTIVE		
 		printf("Waiting for instruction...");
 		printf("Enter the instruction: ");
@@ -817,8 +816,6 @@ extern void mainFunc() {
 		execInstruction();
 		printMemory();
 		eventLoop();
-		// this adda momentum for the instruction for exec (simulate cycles)
-		//usleep(cycle);
 		#endif
 	}
 }

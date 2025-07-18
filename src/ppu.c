@@ -1,13 +1,19 @@
-#include <stdio.h>
-#include "defs.h"
-
-
 /* File responsable for PPU stuff (graphics) */
-u8 p_readbyte;
+
+#include <stdio.h>
+#include "SDL_rwops.h"
+#include "defs.h"
+#include "SDL_surface.h"
+
+u8 ppu_readbyte;
+u8* ppu_addr_rd;
+u16 ppu_cgram;
 void* ppu_ptr;
-/*
-void readFromHex() {
-	SDL_RWops(&read, ppu_ptr, ppu_g_size, ppu_m_size);
-}*/
 
+void readGraphics(u8* address) {
+	/* This function simply will convert a u8
+	 * to a texture */
 
+	return;
+	/* Basically in a loop looking for the next 8-bit */
+}

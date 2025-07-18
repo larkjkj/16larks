@@ -11,41 +11,39 @@
 #include "init_funcs.h"
 #include "memory.h"
 
-int norom = 0;
 u8* rom = NULL;
+int norom = 0;
 int verbose = 0;
 
-#ifdef _PS2
+#ifdef _EE
 #include <unistd.h>
 #include <debug.h>
 #include <kernel.h>
-char* rom_name = "roms/zelda3.smc";
-#else
-char* rom_name;
+#include <ps2_filesystem_driver.h>
 #endif
 
 int main(int argc, char* argv[]) {
 	initGraphics();
-	// Just to check is allocation was succesfully to avoid SEGFAULT
-	if (rom != NULL)
-		printf("Sucess! %p \n", rom[pc]);
-	
 	for(int i = 0; i < argc; i += 1) {
 		if (strcmp(argv[i], "--verbose") == 0) {
 			verbose = 1;
-		} else if (strcmp(argv[i], "--norom") == 0) { 
-			norom = 1;
-			memcpy(rom, fake_rom, sizeof(fake_rom));
-			rom_name = "USING FAKEROM FROM DEF";
 		} else if (strcmp(argv[i], "--rom") == 0) {
 			//this code here was used because i was struggling
 			//with just defining the rom name, so i rewrite it
 			//and it works(nice programmer btw)
 			//strncpy(rom_name, argv[++i], sizeof(argv[++i]));
+			#ifdef _EE
+			rom_name = (char *) "roms/zelda3.sfc";
+			splitRom(rom_name);
+			#else
 			rom_name = argv[++i];
 			printf("%s \n", rom_name);
 			splitRom(rom_name);
+			#endif
 		}
+	}
+	if (rom == NULL) {
+		printf("Null \n");
 	}
 	//printf("Verbose is %d \n", verbose);
 	//printf("NoRom is %d \n", norom);
@@ -56,3 +54,4 @@ int main(int argc, char* argv[]) {
 	}
 	return 0;
 }
+

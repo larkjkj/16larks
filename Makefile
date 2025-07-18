@@ -1,5 +1,5 @@
 ps2	?= 0
-binary	:= larkfx
+binary	:= 16larks 
 
 debug	?= 0
 paths	:= src
@@ -13,7 +13,7 @@ ifeq ($(debug), 1)
 endif
 
 prefix		:=
-incs		+= -I/usr/include -Iinclude -I/usr/include/SDL2
+incs		:= -I/usr/include -Iinclude -I/usr/include/SDL2
 libs		+= -L/usr/lib
 linker		:= $(prefix)ld
 compiler	:= $(prefix)gcc
@@ -23,6 +23,7 @@ ifeq ($(ps2),1)
 	binary		:= larkfx-ps2.elf
 	prefix		:= mips64r5900el-ps2-elf-
 	linker		:= $(prefix)ld
+	linkerfile	:= -T$(PS2SDK)/ee/startup/linkfile
 	compiler	:= $(prefix)gcc
 	
 	linkfile	:= -T$(PS2SDK)/ee/startup/linkfile
@@ -37,7 +38,7 @@ ifeq ($(ps2),1)
 			   -L$(PS2SDK)/ports/lib \
 			   -L$(GSKIT)/lib
 
-	flags		+= -D_PS2=1 -D_EE -mno-crc 
+	flags		+= -D_EE -mno-crc 
 	
 	ldflags		:= -lSDL2 -lSDL2_ttf -lgskit_toolkit -lgskit \
 			   -ldmakit -lpad -lpatches -laudsrv -lps2_drivers \
@@ -57,7 +58,7 @@ clean:
 
 $(binary): $(objects)
 	@test -d $(@D) || mkdir -p $(@D)
-	$(compiler) $(flags) $(incs) $^ $(libs) $(ldflags) -o $@ -g
+	$(compiler) $(linkerfile) $(flags) $(incs) $^ $(libs) $(ldflags) -o $@ -g
 	
 build/%-ps2.o: %.c
 	@test -d $(@D) || mkdir -p $(@D)

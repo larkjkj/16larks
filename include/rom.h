@@ -7,19 +7,21 @@
 extern void splitRom(char* rom);
 extern void identifyRom();
 
-extern size_t rom_size;
 extern u8* rom;
+extern FILE* rom_file;
+extern size_t rom_size;
+extern char* rom_header;
 extern char* rom_name;
 extern char* rom_type;
 
 //extern u16 fake_rom[];
 //split shit
 
-#define _ato 0x03
-#define _mov 0x01
-#define _prn 0x00
-#define _add 0x02
-#define _eoq 0x04
+#define _ato 0x0003
+#define _mov 0x0001
+#define _prn 0x0000
+#define _add 0x0002
+#define _eoq 0x0004
 
 static u16 fake_rom[] = {
 	_mov, 0x0012, 0x00FF, _mov, 0x00A0, 0x0042,

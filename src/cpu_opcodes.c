@@ -138,7 +138,7 @@ inline void adc_dp_indr_l() {
 inline void adc_sr_s() {
 	address = rom[++pc];
 
-	a += ((i8) stack[s + address] + c_flag);
+	a += ((i8) stack_memory[s + address] + c_flag);
 }
 
 inline void adc_dp() {
@@ -235,8 +235,8 @@ inline void adc_dp_y() {
 }
 
 inline void adc_sr_s_indr_y() {
-	byte_low = stack[++s];
-	byte_high = stack[++s];
+	byte_low = stack_memory[++s];
+	byte_high = stack_memory[++s];
 
 	address = (byte_high << 8 | byte_low) + y;
 	c_flag = ((a & compare_hex) ? 0 : 1);
@@ -291,7 +291,7 @@ inline void adc_long_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | rom[++pc]) + x;
+	address = (byte_high << 8 | byte_low  | rom[++pc]) + x;
 	a += total_memory[address] + c_flag;
 	flags_arr[0] = a;
 
@@ -300,8 +300,8 @@ inline void adc_long_x() {
 }
 
 inline void and_sr_s_indr_y() {
-	byte_low = stack[s];
-	byte_high = stack[s++];
+	byte_low = stack_memory[s];
+	byte_high = stack_memory[s++];
 
 	address = (byte_high << 8 | byte_low) + y;
 
@@ -426,8 +426,8 @@ inline void and_addr_y() {
 }
 
 inline void and_sr_s() {
-	byte_low = stack[s];
-	byte_high = stack[s++];
+	byte_low = stack_memory[s];
+	byte_high = stack_memory[s++];
 
 	address = (byte_high << 8 | byte_low);
 
@@ -586,19 +586,23 @@ inline void bit_const() {
 	update_z_flag(1, flags_arr);
 }
 inline void brk_emu() {
-	//push the k register
-	//(u8) signature_byte = rom[++pc];
-	byte_low = rom[++pc];
-	byte_high = (pc + 2);
+	/* This opcode only happens when something goes wrong
+	 * Very likely to happen on a start-point like this */
+
+	/* a 24-bit address is saved */
+	/* */
+	i_flag = 1;
+	d_flag = 0;
+	pb = 0x00;
 	//Emulation Mode
 	if (!e_flag) {
-		stack[--s] = pb;
+		stack_memory[--s] = address;
 		brk_addr = (u32) 0xfffe;
 		cop_addr = (u32) 0xfff4;
 	}
 	//Native Mode
 	else {
-		stack[--s] = (0x0000 | pb);
+		stack_memory[--s] = (0x0000 | pb);
 		byte_high = rom[++pc];
 		address = (byte_high << 8 | byte_low);
 		brk_addr = (u32) 0xffe6;
@@ -606,6 +610,7 @@ inline void brk_emu() {
 	}
 	pc = (u32) rom[brk_addr];
 	i_flag = 1;
+	pc = brk_addr;
 }
 
 /* Maybe i can mix these functions and just make a switch
@@ -692,9 +697,9 @@ inline void cmp_dp_x_indr() {
 }
 
 inline void cmp_sr_s() {
-	operation = (a - (i8) stack[s]);
+	operation = (a - (i8) stack_memory[s]);
 
-	c_flag = ((a >= stack[s]) ? 1 : 0);
+	c_flag = ((a >= stack_memory[s]) ? 1 : 0);
 	flags_arr[0] = operation;
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -732,7 +737,7 @@ inline void cmp_l() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | rom[++pc]);
+	address = (byte_high << 8 | byte_low  | rom[++pc]);
 	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 	flags_arr[0] = total_memory[address] - a;
 
@@ -744,7 +749,7 @@ inline void cmp_l_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | rom[++pc]) + x;
+	address = (byte_high << 8 | byte_low  | rom[++pc]) + x;
 	c_flag = ((a >= total_memory[address]) ? 1 : 0);
 
 	flags_arr[0] = total_memory[address] - a;
@@ -1000,7 +1005,7 @@ inline void eor_dp_x_indr() {
 
 inline void eor_sr_s() {
 	// yes this is different, not a name misleading
-	operation = (a ^ (i8) stack[s]);
+	operation = (a ^ (i8) stack_memory[s]);
 	flags_arr[0] = operation;
 
 	update_n_flag(1, flags_arr);
@@ -1299,7 +1304,7 @@ inline void jmp_addr_l() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = ((byte_high << 16) | byte_low << 8 | address);
+	address = ((byte_high << 8) | byte_low  | address);
 
 	rom[pc] = address;
 }
@@ -1310,7 +1315,7 @@ inline void jmp_addr_indr_l() {
 	byte_low = (total_memory[address + 1]);
 	byte_high = (total_memory[address + 2]);
 
-	address = ((byte_high << 16 | byte_low << 8 | total_memory[address]));
+	address = ((byte_high << 8 | byte_low  | total_memory[address]));
 
 	rom[pc] = total_memory[address];
 	return;
@@ -1322,8 +1327,8 @@ inline void jsr_addr() {
 
 	address = (byte_high << 8 | byte_low);
 	saved_pc = address + 1; // This is the same thing, but a custom variable
-	stack[s--] = (address + 1); //Since stack is emulated as 16-bit we can simply
-				    //assign it to stack without making a byte-to-byte
+	stack_memory[--s] = (address + 1); //Since stack is emulated as 16-bit we can simply
+				    //assign it to stack_memory without making a byte-to-byte
 
 	pc = address;
 }
@@ -1335,8 +1340,8 @@ inline void jsr_l() {
 
 	address = (byte_high << 8 | byte_low | address);
 
-	stack[--s] = (address + 2);
-	saved_pc = ((pb << 16 | (pc + 2) << 8) | (pc + 1));
+	stack_memory[--s] = (address + 2);
+	saved_pc = ((pb << 8 | (pc + 2) << 8) | (pc + 1));
 
 	pc = address;
 }
@@ -1373,9 +1378,9 @@ inline void lda_const() {
 
 	if (!m_flag) {
 		byte_low = rom[++pc];
-		address = ((byte_high << 16 | byte_low << 8 | address));
+		address = ((byte_high << 8 | byte_low  | address));
 	} else {
-		address = ((byte_low << 8 | address));
+		address = ((byte_low  | address));
 	}
 	a = address;
 	flags_arr[0] = a;
@@ -1401,7 +1406,7 @@ inline void lda_dp_indr_l_y() {
 	byte_low = (total_memory[address + 1]);
 	byte_high = (total_memory[address + 2]);
 
-	address = (byte_high << 16 | byte_low << 8 | total_memory[address]);
+	address = (byte_high << 8 | byte_low  | total_memory[address]);
 
 	a = total_memory[address + y];
 
@@ -1417,7 +1422,7 @@ inline void lda_dp_indr_l() {
 	byte_low = (total_memory[address + 1]);
 	byte_high = (total_memory[address + 2]);
 
-	address = (byte_high << 16 | byte_low << 8 | total_memory[address]);
+	address = (byte_high << 8 | byte_low | total_memory[address]);
 
 	a = total_memory[address];
 
@@ -1460,9 +1465,9 @@ inline void lda_l_x() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = ((byte_high << 16 | byte_low << 8 | address) + x) & 0xFFFFFF;
+	address = ((byte_high << 8 | byte_low  | address)) & 0xFFFFFF;
 
-	a = total_memory[address];
+	a = total_memory[address + x];
 	flags_arr[0] = a;
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -1473,7 +1478,7 @@ inline void lda_l() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = (byte_high << 16 | byte_low << 8 | address) & 0xFFFFFF;
+	address = (byte_high << 8 | byte_low  | address) & 0xFFFFFF;
 
 	a = total_memory[address];
 	flags_arr[0] = a;
@@ -1752,7 +1757,7 @@ inline void ora_const() {
 		byte_low = rom[++pc];
 		byte_high = rom[++pc];
 
-		a = ((byte_high << 16 | byte_low << 8) | a);
+		a = ((byte_high << 8 | byte_low ) | a);
 	} else {
 		a = (rom[++pc] | a);
 	}
@@ -1774,7 +1779,7 @@ inline void ora_dp_x() {
 }
 
 inline void ora_sr_s() {
-	address = rom[++pc] + ((i8) stack[s]);
+	address = rom[++pc] + ((i8) stack_memory[s]);
 	a = (address | a);
 	flags_arr[0] = a;
 	
@@ -1828,7 +1833,7 @@ inline void pea() {
 
 	address = (byte_high << 8 | byte_low);
 
-	stack[s - 2] = address;
+	stack_memory[s - 2] = address;
 }
 
 inline void pei_dp() {
@@ -1847,14 +1852,14 @@ inline void pld() {
 
 inline void pha() {
 /*	if (m_flag) {*/
-		stack[s--] = a;
+		stack_memory[s--] = a;
 /*	} else {
 		byte_low = (a & 0xFF);
 		byte_high = a >> 8;
-		stack[s] = byte_low;
-		stack[--s] = byte_high;
+		stack_memory[s] = byte_low;
+		stack_memory[--s] = byte_high;
 	}*/
-	flags_arr[0] = stack[++s];
+	flags_arr[0] = stack_memory[++s];
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -1862,14 +1867,14 @@ inline void pha() {
 
 inline void phb() {
 /*	if (m_flag) {*/
-		stack[s--] = db;
+		stack_memory[s--] = db;
 /*	} else {
 		byte_low = (db & 0xFF);
 		byte_high = db >> 8;
-		stack[s] = byte_low;
-		stack[--s] = byte_high;
+		stack_memory[s] = byte_low;
+		stack_memory[--s] = byte_high;
 	}*/
-	flags_arr[0] = stack[++s];
+	flags_arr[0] = stack_memory[++s];
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -1878,14 +1883,14 @@ inline void phb() {
 
 inline void phd() {
 /*	if (m_flag) {*/
-		stack[s--] = dp;
+		stack_memory[--s] = dp;
 /*	} else {
 		byte_low = (dp & 0xFF);
 		byte_high = dp >> 8;
-		stack[s] = byte_low;
-		stack[--s] = byte_high;
+		stack_memory[s] = byte_low;
+		stack_memory[--s] = byte_high;
 	}*/
-	flags_arr[0] = stack[++s];
+	flags_arr[0] = stack_memory[s];
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -1893,14 +1898,14 @@ inline void phd() {
 
 inline void phk() {
 	/*if (m_flag) {*/
-		stack[s--] = pb;
+		stack_memory[s--] = pb;
 	/*} else {
 		byte_low = (pb & 0xFF);
 		byte_high = pb >> 8;
-		stack[s] = byte_low;
-		stack[--s] = byte_high;
+		stack_memory[s] = byte_low;
+		stack_memory[--s] = byte_high;
 	}*/
-	flags_arr[0] = stack[++s];
+	flags_arr[0] = stack_memory[++s];
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -1910,17 +1915,17 @@ inline void phx() {
 	/*if (m_flag) { Though there was going to have a use for 16-bit, but no, i was wrong*/
 		if (verbose)
 			printf("8-bit mode \n");
-		stack[s--] = x;
+		stack_memory[s--] = x;
 	/*}  
 	else {
 		if (verbose)
 			printf("16-bit mode \n");
 		byte_low = (x & 0xFF);
 		byte_high = x >> 8;
-		stack[s] = byte_low;
-		stack[--s] = byte_high;
+		stack_memory[s] = byte_low;
+		stack_memory[--s] = byte_high;
 	}*/
-	flags_arr[0] = stack[++s];
+	flags_arr[0] = stack_memory[++s];
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -1928,31 +1933,31 @@ inline void phx() {
 
 inline void phy() {
 	/*if (m_flag) {*/
-		stack[s--] = y;
+		stack_memory[s--] = y;
 	/*} else {
 		byte_low = (y & 0xFF);
 		byte_high = y >> 8;
-		stack[s] = byte_low;
-		stack[--s] = byte_high;
+		stack_memory[s] = byte_low;
+		stack_memory[--s] = byte_high;
 	}*/
-	flags_arr[0] = stack[++s];
+	flags_arr[0] = stack_memory[++s];
 
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
 
 inline void pla() {
-	a = stack[s++];
+	a = stack_memory[s++];
 	
-	flags_arr[0] = stack[s];
+	flags_arr[0] = stack_memory[s];
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 }
 
 inline void plb() {
-	db = stack[s++];
+	db = stack_memory[s++];
 
-	flags_arr[0] = stack[--s];
+	flags_arr[0] = stack_memory[--s];
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
 
@@ -1969,27 +1974,27 @@ inline void php() {
 	p |= (z_flag & 0x02);
 	p |= (c_flag & 0x01);
 
-	//stack[s] = ((stack[s] << 7) & n_flag);
-	stack[--s] = p;
+	//stack_memory[s] = ((stack[s] << 7) & n_flag);
+	stack_memory[--s] = p;
 
 	/* This works (probally) but inefficient
-	stack[s] = (stack[s] & n_flag);
-	stack[s] = (stack[s] & v_flag);
-	stack[s] = (stack[s] & m_flag);
-	stack[s] = (stack[s] & x_flag);
-	stack[s] = (stack[s] & d_flag);
-	stack[s] = (stack[s] & i_flag);
-	stack[s] = (stack[s] & c_flag);
+	stack_memory[s] = (stack[s] & n_flag);
+	stack_memory[s] = (stack[s] & v_flag);
+	stack_memory[s] = (stack[s] & m_flag);
+	stack_memory[s] = (stack[s] & x_flag);
+	stack_memory[s] = (stack[s] & d_flag);
+	stack_memory[s] = (stack[s] & i_flag);
+	stack_memory[s] = (stack[s] & c_flag);
 	*/
 }
 
 inline void plp() {
-	p = stack[s++]; 
+	p = stack_memory[s++]; 
 }
 
 inline void plx() {
-	x = stack[++s];
-	flags_arr[0] = stack[s];
+	x = stack_memory[++s];
+	flags_arr[0] = stack_memory[s];
 	
 	s --;
 	update_n_flag(1, flags_arr);
@@ -1997,9 +2002,9 @@ inline void plx() {
 }
 
 inline void ply() {
-	y = stack[++s];
+	y = stack_memory[++s];
 
-	flags_arr[0] = stack[s];
+	flags_arr[0] = stack_memory[s];
 	s --;
 	update_n_flag(1, flags_arr);
 	update_z_flag(1, flags_arr);
@@ -2199,9 +2204,9 @@ inline void rts() {
 }
 
 inline void rtl() {
-/*	address = stack[pc];
-	byte_low = stack[pc + 1];
-	byte_high = stack[pc + 2];
+/*	address = stack_memory[pc];
+	byte_low = stack_memory[pc + 1];
+	byte_high = stack_memory[pc + 2];
 
 	address = ((byte_high << 8 | byte_low  | address) + 1);
 	
@@ -2239,12 +2244,12 @@ inline void tcd() {
 }
 
 inline void tcs() {
-	s = a;
+	byte_low = stack_memory[s++];
+	byte_high = stack_memory[s++];
 
-	flags_arr[0] = s;
+	address = (byte_high << 8 | byte_low);
 
-	update_n_flag(1, flags_arr);
-	update_z_flag(1, flags_arr);
+	a = address;
 }
 
 inline void tdc() {
@@ -2301,7 +2306,13 @@ inline void tsb_addr() {
 }
 
 inline void tsc() {
-	a = s;
+	/*a = stack[s - 2]; idk if this is right, so let's do
+	 * an more 'secure' way */
+	byte_low = (a & 0xFFFF << 8);
+	byte_high = (a & 0xFFFF);
+
+	stack_memory[--s] = (byte_low);
+	stack_memory[--s] = (byte_high);
 
 	flags_arr[0] = a;
 	update_n_flag(1, flags_arr);
@@ -2363,8 +2374,8 @@ inline void sbc_dp_x_indr() {
 }
 
 inline void sbc_sr_s_indr_y() {
-	byte_low = ((stack[s]) & 0xFF);
-	byte_high = ((stack[s + 1]) & 0xFF);
+	byte_low = ((stack_memory[s]) & 0xFF);
+	byte_high = ((stack_memory[s + 1]) & 0xFF);
 
 	address = (byte_high << 8 | byte_low) + y;
 	a -= (total_memory[address] - (!c_flag ? 1 : 0));
@@ -2376,7 +2387,7 @@ inline void sbc_sr_s_indr_y() {
 
 
 inline void sbc_sr_s() {
-	a -= (stack[s] - (!c_flag ? 1 : 0));
+	a -= (stack_memory[s] - (!c_flag ? 1 : 0));
 
 	flags_arr[0] = a;
 	update_n_flag(1, flags_arr);
@@ -2401,7 +2412,7 @@ inline void sbc_dp_indr_l() {
 	byte_low = total_memory[offset + 1];
 	byte_high = total_memory[offset + 2];
 
-	address = ((byte_high << 16) | (byte_low << 8) | address);
+	address = ((byte_high << 8) | (byte_low) | address);
 
 	a -= (total_memory[address] - (!c_flag ? 1 : 0));
 	flags_arr[0] = a;
@@ -2415,7 +2426,7 @@ inline void sbc_dp_indr_l_y() {
 	byte_low = (total_memory[offset + 1]);
 	byte_high = (total_memory[offset + 2]);
 
-	address = (byte_high << 16 | byte_low << 8 | address) + y;
+	address = (byte_high << 8 | byte_low | address) + y;
 	
 	if (verbose) {
 		if (total_memory[address] & 0xffffff) {
@@ -2531,7 +2542,7 @@ inline void sbc_l() {
 	byte_low = rom[++pc];
 	byte_high = rom[++pc];
 
-	address = ((byte_high << 16 | byte_low << 8 | address) & 0xFFFFFF);
+	address = ((byte_high << 8 | byte_low | address) & 0xFFFFFF);
 
 	a &= (0xFFFFFF - address);
 	flags_arr[0] = a;
